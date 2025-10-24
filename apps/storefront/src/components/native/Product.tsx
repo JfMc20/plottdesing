@@ -1,3 +1,5 @@
+'use client'
+
 import { ImageSkeleton } from '@/components/native/icons'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -11,6 +13,7 @@ import {
 import { ProductWithIncludes } from '@/types/prisma'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export const ProductGrid = ({
    products,
@@ -37,6 +40,8 @@ export const ProductSkeletonGrid = () => {
 }
 
 export const Product = ({ product }: { product: ProductWithIncludes }) => {
+   const [imgError, setImgError] = useState(false)
+
    function Price() {
       if (product?.discount > 0) {
          const price = product?.price - product?.discount
@@ -59,15 +64,25 @@ export const Product = ({ product }: { product: ProductWithIncludes }) => {
       <Link className="" href={`/products/${product.id}`}>
          <Card className="h-full">
             <CardHeader className="p-0">
-               <div className="relative h-60 w-full">
-                  <Image
-                     className="rounded-t-lg"
-                     src={product?.images[0]}
-                     alt="product image"
-                     fill
-                     sizes="(min-width: 1000px) 30vw, 50vw"
-                     style={{ objectFit: 'cover' }}
-                  />
+               <div className="relative h-60 w-full bg-neutral-100 dark:bg-neutral-800">
+                  {imgError ? (
+                     <div className="flex h-full w-full items-center justify-center">
+                        <ImageSkeleton />
+                     </div>
+                  ) : (
+                     <Image
+                        className="rounded-t-lg"
+                        src={product?.images[0]}
+                        alt={product?.title || 'product image'}
+                        fill
+                        sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        style={{ objectFit: 'cover' }}
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+                        onError={() => setImgError(true)}
+                     />
+                  )}
                </div>
             </CardHeader>
             <CardContent className="grid gap-1 p-4">

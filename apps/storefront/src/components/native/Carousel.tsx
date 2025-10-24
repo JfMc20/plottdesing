@@ -30,7 +30,15 @@ export default function Carousel({ images }: { images: string[] }) {
             <div className="flex">
                {images.map((src, i) => (
                   <div className="relative h-96 flex-[0_0_100%]" key={i}>
-                     <Image src={src} fill className="object-cover" alt="" />
+                     <Image
+                        src={src}
+                        fill
+                        className="object-cover"
+                        alt=""
+                        priority={i === 0}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        sizes="100vw"
+                     />
                   </div>
                ))}
             </div>
