@@ -50,6 +50,63 @@ import { verifyEmailConnection } from '@/lib/email'
 const isReady = await verifyEmailConnection()
 ```
 
+## Testing (Solo en Development)
+
+### 1. Verificar configuración SMTP
+
+```bash
+curl http://localhost:7777/api/email/test
+```
+
+Respuesta esperada:
+```json
+{
+  "success": true,
+  "message": "Email service is configured correctly",
+  "config": {
+    "host": "smtp-relay.brevo.com",
+    "port": "587",
+    "from": "PlottDesign <noreply@plottdesign.com>"
+  }
+}
+```
+
+### 2. Enviar email de prueba
+
+#### Email de verificación
+```bash
+curl -X POST http://localhost:7777/api/email/send-test \
+  -H "Content-Type: application/json" \
+  -d '{"to": "tu-email@example.com", "type": "verification"}'
+```
+
+#### Email de orden
+```bash
+curl -X POST http://localhost:7777/api/email/send-test \
+  -H "Content-Type: application/json" \
+  -d '{"to": "tu-email@example.com", "type": "order"}'
+```
+
+Respuesta esperada:
+```json
+{
+  "success": true,
+  "message": "Test verification email sent successfully to tu-email@example.com",
+  "messageId": "<message-id@smtp>",
+  "type": "verification",
+  "recipient": "tu-email@example.com"
+}
+```
+
+### 3. Revisar tu bandeja de entrada
+
+Después de enviar el email de prueba:
+1. Revisa tu bandeja de entrada
+2. Si no lo ves, revisa la carpeta de SPAM
+3. Los emails tienen el prefijo `[TEST]` en el asunto
+
+**Nota:** Los endpoints de testing solo funcionan en modo development.
+
 ## Plantillas disponibles
 
 - `VerificationEmail` - Email de verificación de cuenta
