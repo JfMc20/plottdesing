@@ -22,7 +22,6 @@
    "dependencies": {
       "@hookform/resolvers": "^3.9.0",
       "@persepolis/auth": "file:../../packages/auth",
-      "@persepolis/mail": "^1.0.9",
       "@persepolis/regex": "^0.0.3",
       "@persepolis/rng": "^0.0.1",
       "@persepolis/slugify": "^0.0.1",

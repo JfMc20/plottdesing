@@ -1,9 +1,7 @@
 import config from '@/config/site'
-import Mail from '@/emails/order_notification_owner'
 import prisma from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
-import { sendMail } from '@persepolis/mail'
-import { render } from '@react-email/render'
+import { sendEmail, OrderNotificationEmail } from '@/lib/email'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -134,17 +132,14 @@ export async function POST(req: Request) {
       })
 
       for (const owner of owners) {
-         await sendMail({
-            name: config.name,
+         await sendEmail({
             to: owner.email,
             subject: 'An order was created.',
-            html: await render(
-               Mail({
-                  id: order.id,
-                  payable: payable.toFixed(2),
-                  orderNum: order.number.toString(),
-               })
-            ),
+            template: OrderNotificationEmail({
+               id: order.id,
+               payable: payable.toFixed(2),
+               orderNum: order.number.toString(),
+            }),
          })
       }
 
