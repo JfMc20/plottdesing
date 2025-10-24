@@ -26,6 +26,7 @@ export function UserNav() {
    async function onLogout() {
       try {
          const response = await fetch('/api/auth/logout', {
+            method: 'POST',
             cache: 'no-store',
          })
 
@@ -34,7 +35,9 @@ export function UserNav() {
                'logged-in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
          }
 
-         if (response.status === 200) window.location.reload()
+         if (response.ok) {
+            window.location.href = '/login'
+         }
       } catch (error) {
          console.error({ error })
       }
