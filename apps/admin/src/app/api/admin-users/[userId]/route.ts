@@ -5,28 +5,21 @@ import { NextResponse } from 'next/server'
 /**
  * DELETE /api/admin-users/[userId]
  * Delete an admin user
+ *
+ * Note: Authentication and admin role verification is handled by middleware.
+ * Only authenticated admins can reach this endpoint.
  */
 export async function DELETE(
   req: Request,
   { params }: { params: { userId: string } }
 ) {
   try {
-    // Verify current user is admin
+    // Get current user to prevent self-deletion
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
-    if (!adminEmails.includes(user.email || '')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     // Prevent deleting yourself
-    if (user.id === params.userId) {
+    if (user && user.id === params.userId) {
       return NextResponse.json(
         { error: 'You cannot delete your own account' },
         { status: 400 }

@@ -48,11 +48,13 @@ export const config = {
     '/',
     '/products/:path*',
     '/banners/:path*',
+    '/brands/:path*',
     '/orders/:path*',
     '/categories/:path*',
     '/payments/:path*',
     '/codes/:path*',
     '/users/:path*',
+    '/admin-users/:path*',
     '/api/:path*',
   ],
 }

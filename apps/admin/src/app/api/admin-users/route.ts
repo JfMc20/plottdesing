@@ -1,28 +1,17 @@
 import { createAdminClient } from '@/lib/auth-shared/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 /**
  * GET /api/admin-users
  * List all admin users (users in Supabase Auth)
+ *
+ * Note: Authentication and admin role verification is handled by middleware.
+ * Only authenticated admins can reach this endpoint.
  */
 export async function GET() {
   try {
-    // Verify current user is admin
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin (you can add your admin check logic here)
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
-    if (!adminEmails.includes(user.email || '')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     // Get all users using admin client
+    // No need to check auth here - middleware already verified it
     const supabaseAdmin = createAdminClient()
     const { data, error } = await supabaseAdmin.auth.admin.listUsers()
 
@@ -44,23 +33,12 @@ export async function GET() {
 /**
  * POST /api/admin-users
  * Create a new admin user
+ *
+ * Note: Authentication and admin role verification is handled by middleware.
+ * Only authenticated admins can reach this endpoint.
  */
 export async function POST(req: Request) {
   try {
-    // Verify current user is admin
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
-    if (!adminEmails.includes(user.email || '')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await req.json()
     const { email, password } = body
 
