@@ -13,8 +13,13 @@ import {
    FormMessage,
 } from '@/components/ui/form'
 import { Heading } from '@/components/ui/heading'
-import ImageUpload from '@/components/ui/image-upload'
 import { Input } from '@/components/ui/input'
+import dynamic from 'next/dynamic'
+
+// Import ImageUpload dynamically to avoid hydration errors
+const ImageUpload = dynamic(() => import('@/components/ui/image-upload'), {
+   ssr: false,
+})
 import {
    Select,
    SelectContent,

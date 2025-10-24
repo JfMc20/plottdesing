@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast'
 import { Trash } from 'lucide-react'
 import { Banner } from '@prisma/client'
 import { useParams, useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -22,7 +23,11 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Heading } from '@/components/ui/heading'
 import { AlertModal } from '@/components/modals/alert-modal'
-import ImageUpload from '@/components/ui/image-upload'
+
+// Import ImageUpload dynamically to avoid hydration errors
+const ImageUpload = dynamic(() => import('@/components/ui/image-upload'), {
+   ssr: false,
+})
 
 const formSchema = z.object({
    label: z.string().min(1),
