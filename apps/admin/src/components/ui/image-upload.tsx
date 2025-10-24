@@ -25,7 +25,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setIsMounted(true)
    }, [])
 
-   const onUpload = (result: any) => {
+   const onSuccess = (result: any) => {
       onChange(result.info.secure_url)
    }
 
@@ -36,33 +36,35 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
    return (
       <div>
          <div className="mb-4 flex items-center gap-4">
-            {value.map((url) => (
-               <div
-                  key={url}
-                  className="relative w-[200px] h-[200px] rounded-md overflow-hidden"
-               >
-                  <div className="z-10 absolute top-2 right-2">
-                     <Button
-                        type="button"
-                        onClick={() => onRemove(url)}
-                        variant="destructive"
-                        size="sm"
-                     >
-                        <Trash className="h-4" />
-                     </Button>
+            {value
+               .filter((url) => url) // Filter out empty strings
+               .map((url) => (
+                  <div
+                     key={url}
+                     className="relative w-[200px] h-[200px] rounded-md overflow-hidden"
+                  >
+                     <div className="z-10 absolute top-2 right-2">
+                        <Button
+                           type="button"
+                           onClick={() => onRemove(url)}
+                           variant="destructive"
+                           size="sm"
+                        >
+                           <Trash className="h-4" />
+                        </Button>
+                     </div>
+                     <Image
+                        fill
+                        sizes="(min-width: 1000px) 30vw, 50vw"
+                        className="object-cover"
+                        alt="Image"
+                        src={url}
+                     />
                   </div>
-                  <Image
-                     fill
-                     sizes="(min-width: 1000px) 30vw, 50vw"
-                     className="object-cover"
-                     alt="Image"
-                     src={url}
-                  />
-               </div>
-            ))}
+               ))}
          </div>
          <CldUploadWidget
-            onUpload={onUpload}
+            onSuccess={onSuccess}
             uploadPreset="plottdesign"
          >
             {({ open }) => {
