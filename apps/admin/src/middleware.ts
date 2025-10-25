@@ -39,8 +39,15 @@ export async function middleware(req: NextRequest) {
     )
   }
 
-  // User is authenticated and is admin - continue with session update
-  return await updateSession(req)
+  // User is authenticated and is admin - continue with session update and add user ID header
+  const response = await updateSession(req)
+
+  // Add user ID to request headers for API routes
+  if (pathname.startsWith('/api/')) {
+    response.headers.set('X-USER-ID', user.id)
+  }
+
+  return response
 }
 
 export const config = {

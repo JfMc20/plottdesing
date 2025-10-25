@@ -44,7 +44,12 @@ const formSchema = z.object({
    price: z.coerce.number().min(1),
    discount: z.coerce.number().min(0),
    stock: z.coerce.number().min(0),
+   weight: z.coerce.number().min(0).optional(),
+   width: z.coerce.number().min(0).optional(),
+   height: z.coerce.number().min(0).optional(),
+   length: z.coerce.number().min(0).optional(),
    categoryId: z.string().min(1),
+   brandId: z.string().min(1),
    isFeatured: z.boolean().default(false).optional(),
    isAvailable: z.boolean().default(false).optional(),
 })
@@ -54,11 +59,13 @@ type ProductFormValues = z.infer<typeof formSchema>
 interface ProductFormProps {
    initialData: ProductWithIncludes | null
    categories: Category[]
+   brands: { id: string; title: string }[]
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
    initialData,
    categories,
+   brands,
 }) => {
    const params = useParams()
    const router = useRouter()
@@ -76,15 +83,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({
            ...initialData,
            price: parseFloat(String(initialData?.price.toFixed(2))),
            discount: parseFloat(String(initialData?.discount.toFixed(2))),
+           weight: initialData.weight || undefined,
+           width: initialData.width || undefined,
+           height: initialData.height || undefined,
+           length: initialData.length || undefined,
+           categoryId: initialData.categories?.[0]?.id || '',
+           brandId: initialData.brandId,
         }
       : {
-           title: '---',
-           description: '---',
+           title: '',
            images: [],
            price: 0,
            discount: 0,
            stock: 0,
-           categoryId: '---',
+           weight: undefined,
+           width: undefined,
+           height: undefined,
+           length: undefined,
+           categoryId: '',
+           brandId: '',
            isFeatured: false,
            isAvailable: false,
         }
@@ -126,14 +143,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       try {
          setLoading(true)
 
-         await fetch(`/api/products/${params.productId}`, {
+         const response = await fetch(`/api/products/${params.productId}`, {
             method: 'DELETE',
             cache: 'no-store',
          })
 
+         const data = await response.json()
+
          router.refresh()
          router.push(`/products`)
-         toast.success('Product deleted.')
+
+         if (data.archived) {
+            toast.success('Product archived due to existing orders.')
+         } else {
+            toast.success('Product deleted.')
+         }
       } catch (error: any) {
          toast.error('Something went wrong.')
       } finally {
@@ -142,6 +166,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }
    }
 
+   const hasOrders = initialData?.orders && initialData.orders.length > 0
+
    return (
       <>
          <AlertModal
@@ -149,6 +175,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onClose={() => setOpen(false)}
             onConfirm={onDelete}
             loading={loading}
+            title="Delete Product"
+            description={hasOrders ? "This product will be archived instead of deleted." : "This action cannot be undone."}
+            warning={hasOrders ? "This product has existing orders and cannot be permanently deleted. It will be archived and marked as unavailable instead." : undefined}
          />
          <div className="flex items-center justify-between">
             <Heading title={title} description={description} />
@@ -177,10 +206,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         <FormLabel>Images</FormLabel>
                         <FormControl>
                            <ImageUpload
-                              value={field.value.map((image) => image)}
+                              value={field.value}
                               disabled={loading}
                               onChange={(url) =>
-                                 field.onChange([...field.value, { url }])
+                                 field.onChange([...field.value, url])
                               }
                               onRemove={(url) =>
                                  field.onChange([
@@ -269,6 +298,82 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   />
                   <FormField
                      control={form.control}
+                     name="weight"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Weight (kg)</FormLabel>
+                           <FormControl>
+                              <Input
+                                 type="number"
+                                 step="0.01"
+                                 disabled={loading}
+                                 placeholder="0.5"
+                                 {...field}
+                              />
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="width"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Width (cm)</FormLabel>
+                           <FormControl>
+                              <Input
+                                 type="number"
+                                 step="0.1"
+                                 disabled={loading}
+                                 placeholder="10"
+                                 {...field}
+                              />
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="height"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Height (cm)</FormLabel>
+                           <FormControl>
+                              <Input
+                                 type="number"
+                                 step="0.1"
+                                 disabled={loading}
+                                 placeholder="10"
+                                 {...field}
+                              />
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="length"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Length (cm)</FormLabel>
+                           <FormControl>
+                              <Input
+                                 type="number"
+                                 step="0.1"
+                                 disabled={loading}
+                                 placeholder="10"
+                                 {...field}
+                              />
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
                      name="categoryId"
                      render={({ field }) => (
                         <FormItem>
@@ -294,6 +399,41 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                                        value={category.id}
                                     >
                                        {category.title}
+                                    </SelectItem>
+                                 ))}
+                              </SelectContent>
+                           </Select>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="brandId"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Brand</FormLabel>
+                           <Select
+                              disabled={loading}
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              defaultValue={field.value}
+                           >
+                              <FormControl>
+                                 <SelectTrigger>
+                                    <SelectValue
+                                       defaultValue={field.value}
+                                       placeholder="Select a brand"
+                                    />
+                                 </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                 {brands.map((brand) => (
+                                    <SelectItem
+                                       key={brand.id}
+                                       value={brand.id}
+                                    >
+                                       {brand.title}
                                     </SelectItem>
                                  ))}
                               </SelectContent>
