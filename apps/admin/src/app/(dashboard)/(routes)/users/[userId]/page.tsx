@@ -34,7 +34,7 @@ const UserPage = async ({ params }: { params: { userId: string } }) => {
    })
 
    function OrdersCard() {
-      const { orders } = user
+      const orders = user?.orders || []
 
       const formattedOrders: OrderColumn[] = orders.map((order) => ({
          id: order.id,

@@ -12,8 +12,16 @@ import {
    FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+} from '@/components/ui/select'
 import type { OrderWithIncludes } from '@/types/prisma'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { OrderStatusEnum } from '@prisma/client'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -22,8 +30,10 @@ import * as z from 'zod'
 
 const formSchema = z.object({
    status: z.string().min(1),
-   shipping: z.coerce.number().min(1),
-   payable: z.coerce.number().min(1),
+   total: z.coerce.number().min(0),
+   shipping: z.coerce.number().min(0),
+   tax: z.coerce.number().min(0),
+   payable: z.coerce.number().min(0),
    discount: z.coerce.number().min(0),
    isPaid: z.boolean().default(false).optional(),
    isCompleted: z.boolean().default(false).optional(),
@@ -49,8 +59,10 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
            ...initialData,
         }
       : {
-           status: '---',
+           status: 'Processing',
+           total: 0,
            shipping: 0,
+           tax: 0,
            payable: 0,
            discount: 0,
            isPaid: false,
@@ -67,21 +79,27 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
          setLoading(true)
 
          if (initialData) {
-            await fetch(`/api/products/${params.productId}`, {
+            await fetch(`/api/orders/${params.orderId}`, {
                method: 'PATCH',
+               headers: {
+                  'Content-Type': 'application/json',
+               },
                body: JSON.stringify(data),
                cache: 'no-store',
             })
          } else {
-            await fetch(`/api/products`, {
+            await fetch(`/api/orders`, {
                method: 'POST',
+               headers: {
+                  'Content-Type': 'application/json',
+               },
                body: JSON.stringify(data),
                cache: 'no-store',
             })
          }
 
          router.refresh()
-         router.push(`/products`)
+         router.push(`/orders`)
          toast.success(toastMessage)
       } catch (error: any) {
          toast.error('Something went wrong.')
@@ -98,18 +116,95 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
          >
             <FormField
                control={form.control}
-               name="shipping"
+               name="status"
                render={({ field }) => (
                   <FormItem>
-                     <FormLabel>Price</FormLabel>
+                     <FormLabel>Order Status</FormLabel>
+                     <Select
+                        disabled={loading}
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                     >
+                        <FormControl>
+                           <SelectTrigger>
+                              <SelectValue
+                                 defaultValue={field.value}
+                                 placeholder="Select a status"
+                              />
+                           </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           {Object.values(OrderStatusEnum).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                 {status}
+                              </SelectItem>
+                           ))}
+                        </SelectContent>
+                     </Select>
+                     <FormMessage />
+                  </FormItem>
+               )}
+            />
+            <FormField
+               control={form.control}
+               name="total"
+               render={({ field }) => (
+                  <FormItem>
+                     <FormLabel>Order Total</FormLabel>
                      <FormControl>
                         <Input
                            type="number"
                            disabled={loading}
-                           placeholder="9.99"
+                           placeholder="0.00"
                            {...field}
                         />
                      </FormControl>
+                     <FormDescription>
+                        Subtotal before shipping, tax, and discount
+                     </FormDescription>
+                     <FormMessage />
+                  </FormItem>
+               )}
+            />
+            <FormField
+               control={form.control}
+               name="shipping"
+               render={({ field }) => (
+                  <FormItem>
+                     <FormLabel>Shipping Cost</FormLabel>
+                     <FormControl>
+                        <Input
+                           type="number"
+                           disabled={loading}
+                           placeholder="0.00"
+                           {...field}
+                        />
+                     </FormControl>
+                     <FormDescription>
+                        Shipping and handling charges
+                     </FormDescription>
+                     <FormMessage />
+                  </FormItem>
+               )}
+            />
+            <FormField
+               control={form.control}
+               name="tax"
+               render={({ field }) => (
+                  <FormItem>
+                     <FormLabel>Tax Amount</FormLabel>
+                     <FormControl>
+                        <Input
+                           type="number"
+                           disabled={loading}
+                           placeholder="0.00"
+                           {...field}
+                        />
+                     </FormControl>
+                     <FormDescription>
+                        Tax applied to this order
+                     </FormDescription>
                      <FormMessage />
                   </FormItem>
                )}
@@ -119,15 +214,18 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
                name="payable"
                render={({ field }) => (
                   <FormItem>
-                     <FormLabel>Discount</FormLabel>
+                     <FormLabel>Total Payable</FormLabel>
                      <FormControl>
                         <Input
                            type="number"
                            disabled={loading}
-                           placeholder="9.99"
+                           placeholder="0.00"
                            {...field}
                         />
                      </FormControl>
+                     <FormDescription>
+                        Final amount to be paid (total + shipping + tax - discount)
+                     </FormDescription>
                      <FormMessage />
                   </FormItem>
                )}
@@ -137,15 +235,18 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
                name="discount"
                render={({ field }) => (
                   <FormItem>
-                     <FormLabel>Discount</FormLabel>
+                     <FormLabel>Discount Amount</FormLabel>
                      <FormControl>
                         <Input
                            type="number"
                            disabled={loading}
-                           placeholder="9.99"
+                           placeholder="0.00"
                            {...field}
                         />
                      </FormControl>
+                     <FormDescription>
+                        Total discount applied to this order
+                     </FormDescription>
                      <FormMessage />
                   </FormItem>
                )}
@@ -162,9 +263,9 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
                         />
                      </FormControl>
                      <div className="space-y-1 leading-none">
-                        <FormLabel>Featured</FormLabel>
+                        <FormLabel>Paid</FormLabel>
                         <FormDescription>
-                           This product will appear on the home page
+                           Mark this order as paid
                         </FormDescription>
                      </div>
                   </FormItem>
@@ -182,9 +283,9 @@ export const OrderForm: React.FC<ProductFormProps> = ({ initialData }) => {
                         />
                      </FormControl>
                      <div className="space-y-1 leading-none">
-                        <FormLabel>Available</FormLabel>
+                        <FormLabel>Completed</FormLabel>
                         <FormDescription>
-                           This product will appear in the store.
+                           Mark this order as completed
                         </FormDescription>
                      </div>
                   </FormItem>

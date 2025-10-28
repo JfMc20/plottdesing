@@ -16,6 +16,8 @@ import prisma from '@/lib/prisma'
 import Link from 'next/link'
 
 import { OrderForm } from './components/order-form'
+import { OrderItemsList } from './components/order-items-list'
+import { RefundSection } from './components/refund-section'
 
 const ProductPage = async ({ params }: { params: { orderId: string } }) => {
    const order = await prisma.order.findUnique({
@@ -95,6 +97,34 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
       )
    }
 
+   function OrderItemsCard() {
+      if (!order) return null
+
+      return (
+         <Card className="my-4 p-2 bg-muted-foreground/5">
+            <CardContent>
+               <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                     <AccordionTrigger>
+                        <div className="block">
+                           <h2 className="text-lg font-bold tracking-wider text-left">
+                              ORDER ITEMS
+                           </h2>
+                           <p className="text-sm font-light text-foreground/70">
+                              Products in this order.
+                           </p>
+                        </div>
+                     </AccordionTrigger>
+                     <AccordionContent>
+                        <OrderItemsList order={order} />
+                     </AccordionContent>
+                  </AccordionItem>
+               </Accordion>
+            </CardContent>
+         </Card>
+      )
+   }
+
    function EditOrderCard() {
       return (
          <Card className="my-4 p-2">
@@ -107,7 +137,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                               EDIT ORDER
                            </h2>
                            <p className="text-sm font-light text-foreground/70">
-                              User in this order.
+                              Modify order details.
                            </p>
                         </div>
                      </AccordionTrigger>
@@ -131,6 +161,8 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                />
             </div>
             <UserCard />
+            <OrderItemsCard />
+            {order && <RefundSection order={order} />}
             <EditOrderCard />
          </div>
       </div>

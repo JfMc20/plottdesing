@@ -1,13 +1,12 @@
 {
-   "name": "next-prisma-tailwind-ecommerce",
+   "name": "PlottDesignECommerce",
    "version": "1.0.0",
    "scripts": {
       "prepare": "husky install",
       "update": "npx npm-check-updates -u"
    },
    "author": {
-      "name": "Sesto",
-      "url": "https://github.com/sesto-dev"
+      "name": "JMSolutions"
    },
    "license": "MIT",
    "devDependencies": {
