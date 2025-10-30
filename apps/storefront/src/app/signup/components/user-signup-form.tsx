@@ -9,6 +9,7 @@ import { isEmailValid } from '@persepolis/regex'
 import { Loader } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import * as React from 'react'
+import { VerificationSuccess } from './verification-success'
 
 interface UserSignupFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -95,7 +96,22 @@ function SignupComponents({ isLoading, setIsLoading }) {
             return
          }
 
+         console.log('📝 Full signup response:', JSON.stringify(data, null, 2))
+
          if (data.user) {
+            console.log('📝 User object:', {
+               email: data.user.email,
+               email_confirmed_at: data.user.email_confirmed_at,
+               confirmed_at: data.user.confirmed_at,
+               identities: data.user.identities?.length,
+               user_metadata: data.user.user_metadata,
+            })
+
+            console.log('📝 Session object:', {
+               hasSession: !!data.session,
+               session: data.session,
+            })
+
             // Check if email confirmation is required
             if (data.user.identities && data.user.identities.length === 0) {
                setError('This email is already registered. Please login instead.')
@@ -103,13 +119,22 @@ function SignupComponents({ isLoading, setIsLoading }) {
                return
             }
 
-            // Check if user needs to confirm email
-            if (data.user.email_confirmed_at === null) {
+            // Si no hay sesión creada, significa que necesita confirmar el email
+            if (!data.session) {
+               console.log('✅ No session created - email confirmation required')
+               setSuccess(true)
+               setIsLoading(false)
+               return
+            }
+
+            // Si hay sesión pero el email no está confirmado
+            if (data.session && !data.user.email_confirmed_at && !data.user.confirmed_at) {
+               console.log('✅ Email confirmation required - showing verification screen')
                setSuccess(true)
                setIsLoading(false)
             } else {
                // User can login immediately
-               console.log('✅ Signup successful:', data.user.email)
+               console.log('✅ Signup successful - user can login:', data.user.email)
                router.push('/')
                router.refresh()
             }
@@ -121,45 +146,23 @@ function SignupComponents({ isLoading, setIsLoading }) {
       }
    }
 
+   async function handleResendVerification() {
+      const { error } = await supabase.auth.resend({
+         type: 'signup',
+         email: email,
+      })
+
+      if (error) {
+         throw new Error(error.message)
+      }
+   }
+
    if (success) {
       return (
-         <div className="grid gap-4">
-            <div className="rounded-md bg-green-50 border border-green-200 p-4">
-               <div className="flex items-start gap-3">
-                  <svg
-                     className="h-5 w-5 text-green-600 mt-0.5"
-                     fill="none"
-                     strokeLinecap="round"
-                     strokeLinejoin="round"
-                     strokeWidth="2"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
-                  >
-                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <div className="flex-1">
-                     <p className="font-semibold text-green-900 mb-2">
-                        Account created successfully!
-                     </p>
-                     <div className="text-sm text-green-800 space-y-2">
-                        <p>We've sent a confirmation email to:</p>
-                        <p className="font-medium">{email}</p>
-                        <p>Please check your inbox and click the confirmation link to activate your account.</p>
-                        <p className="text-xs mt-3 text-green-700">
-                           💡 Don't see the email? Check your spam folder.
-                        </p>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            <Button
-               onClick={() => router.push('/login')}
-               variant="outline"
-               type="button"
-            >
-               Go to Login
-            </Button>
-         </div>
+         <VerificationSuccess
+            email={email}
+            onResend={handleResendVerification}
+         />
       )
    }
 

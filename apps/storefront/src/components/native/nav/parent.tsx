@@ -9,6 +9,7 @@ import { useAuthenticated } from '@/hooks/useAuthentication'
 import { LogInIcon, MoonIcon, ShoppingBasketIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function Header() {
    const { authenticated } = useAuthenticated()
@@ -54,11 +55,25 @@ function LoginDialog() {
 
 function ThemeToggle() {
    const { resolvedTheme, setTheme } = useTheme()
+   const [mounted, setMounted] = useState(false)
+
+   useEffect(() => {
+      setMounted(true)
+   }, [])
+
+   if (!mounted) {
+      return (
+         <Button variant="outline" size="icon" className="h-9">
+            <SunIcon className="h-4" />
+         </Button>
+      )
+   }
 
    return (
       <Button
          variant="outline"
          size="icon"
+         className="h-9"
          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       >
          {resolvedTheme === 'dark' ? (

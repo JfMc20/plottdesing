@@ -16,6 +16,8 @@ export async function getCurrentUser() {
       return null
     }
 
+    const avatarUrl = supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || null
+
     // Find user by supabaseId
     let user = await prisma.user.findUnique({
       where: { supabaseId: supabaseUser.id },
@@ -24,18 +26,54 @@ export async function getCurrentUser() {
       },
     })
 
-    // If user doesn't exist, create them
+    // If not found by supabaseId, try to find by email and update supabaseId
+    if (!user && supabaseUser.email) {
+      user = await prisma.user.findUnique({
+        where: { email: supabaseUser.email },
+        include: {
+          cart: true,
+        },
+      })
+
+      // If found by email, update the supabaseId
+      if (user) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            supabaseId: supabaseUser.id,
+            ...(avatarUrl && { avatarUrl }),
+          },
+          include: {
+            cart: true,
+          },
+        })
+      }
+    }
+
+    // If still not found, create new user
     if (!user && supabaseUser.email) {
       user = await prisma.user.create({
         data: {
           supabaseId: supabaseUser.id,
           email: supabaseUser.email,
           name: supabaseUser.user_metadata?.full_name || supabaseUser.email,
+          avatarUrl,
           isEmailVerified: true,
           cart: {
             create: {},
           },
         },
+        include: {
+          cart: true,
+        },
+      })
+    }
+
+    // Update avatar if user exists but avatar is missing and we have one from provider
+    if (user && !user.avatarUrl && avatarUrl) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl },
         include: {
           cart: true,
         },

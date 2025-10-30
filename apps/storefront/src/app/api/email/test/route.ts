@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
  * GET /api/email/test
  *
  * This endpoint verifies if the email service is properly configured
- * and can connect to the SMTP server.
+ * and can connect to Brevo API.
  *
  * IMPORTANT: Only use in development. Consider adding authentication in production.
  */
@@ -27,8 +27,7 @@ export async function GET() {
             success: true,
             message: 'Email service is configured correctly',
             config: {
-               host: process.env.MAIL_SMTP_HOST,
-               port: process.env.MAIL_SMTP_PORT,
+               provider: 'Brevo',
                from: `${process.env.MAIL_FROM_NAME} <${process.env.MAIL_FROM_EMAIL}>`,
             },
          })
@@ -37,7 +36,7 @@ export async function GET() {
             {
                success: false,
                message: 'Email service connection failed',
-               error: 'Could not connect to SMTP server',
+               error: 'Could not connect to Brevo API',
             },
             { status: 500 }
          )

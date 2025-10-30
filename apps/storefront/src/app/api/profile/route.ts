@@ -14,14 +14,50 @@ export async function GET(req: Request) {
       }
 
       // Sync or get user from Prisma
-      const prismaUser = await prisma.user.upsert({
+      const avatarUrl = supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || null
+
+      // First, try to find by supabaseId
+      let prismaUser = await prisma.user.findUnique({
          where: { supabaseId: supabaseUser.id },
-         update: {},
-         create: {
-            supabaseId: supabaseUser.id,
-            email: supabaseUser.email,
-         },
       })
+
+      // If not found by supabaseId, try to find by email and update supabaseId
+      if (!prismaUser && supabaseUser.email) {
+         prismaUser = await prisma.user.findUnique({
+            where: { email: supabaseUser.email },
+         })
+
+         // If found by email, update the supabaseId
+         if (prismaUser) {
+            prismaUser = await prisma.user.update({
+               where: { id: prismaUser.id },
+               data: {
+                  supabaseId: supabaseUser.id,
+                  ...(avatarUrl && { avatarUrl }),
+               },
+            })
+         }
+      }
+
+      // If still not found, create new user
+      if (!prismaUser) {
+         prismaUser = await prisma.user.create({
+            data: {
+               supabaseId: supabaseUser.id,
+               email: supabaseUser.email,
+               name: supabaseUser.user_metadata?.full_name || supabaseUser.email,
+               avatarUrl,
+            },
+         })
+      } else {
+         // Update existing user with avatar if needed
+         if (avatarUrl && !prismaUser.avatarUrl) {
+            prismaUser = await prisma.user.update({
+               where: { id: prismaUser.id },
+               data: { avatarUrl },
+            })
+         }
+      }
 
       const user = await prisma.user.findUniqueOrThrow({
          where: { id: prismaUser.id },
@@ -41,10 +77,12 @@ export async function GET(req: Request) {
       })
 
       return NextResponse.json({
+         id: user.id,
          phone: user.phone,
          email: user.email,
          name: user.name,
          birthday: user.birthday,
+         avatarUrl: user.avatarUrl,
          addresses: user.addresses,
          wishlist: user.wishlist,
          cart: user.cart,

@@ -13,8 +13,9 @@ model User {
   email      String? @unique
   phone      String? @unique
 
-  name     String?
-  birthday String?
+  name      String?
+  birthday  String?
+  avatarUrl String? // Google profile photo or user uploaded avatar
 
   emailUnsubscribeToken String? @unique @default(cuid())
   referralCode          String? @unique

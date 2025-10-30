@@ -1,53 +1,24 @@
 /**
  * Unified Email Service
  *
- * This service provides a centralized way to send emails using Brevo SMTP.
+ * This service provides a centralized way to send emails using Brevo API.
  * It follows DRY principles by having a single source of truth for email configuration.
  */
 
-import nodemailer from 'nodemailer'
 import { render } from '@react-email/render'
 import { ReactElement } from 'react'
 
 // Email configuration from environment variables
-const SMTP_CONFIG = {
-   host: process.env.MAIL_SMTP_HOST,
-   port: parseInt(process.env.MAIL_SMTP_PORT || '587'),
-   secure: false, // true for 465, false for other ports
-   auth: {
-      user: process.env.MAIL_SMTP_USER,
-      pass: process.env.MAIL_SMTP_PASS,
-   },
-}
+const BREVO_API_KEY = process.env.BREVO_API_KEY
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
 const FROM_EMAIL = {
    email: process.env.MAIL_FROM_EMAIL || 'noreply@plottdesign.com',
    name: process.env.MAIL_FROM_NAME || 'PlottDesign',
 }
 
-// Create reusable transporter
-let transporter: nodemailer.Transporter | null = null
-
 /**
- * Get or create email transporter
- */
-function getTransporter() {
-   if (!transporter) {
-      // Validate required environment variables
-      if (!SMTP_CONFIG.host || !SMTP_CONFIG.auth.user || !SMTP_CONFIG.auth.pass) {
-         throw new Error(
-            'Missing email configuration. Please check MAIL_SMTP_HOST, MAIL_SMTP_USER, and MAIL_SMTP_PASS environment variables.'
-         )
-      }
-
-      transporter = nodemailer.createTransport(SMTP_CONFIG)
-   }
-
-   return transporter
-}
-
-/**
- * Send email using React Email template
+ * Send email using React Email template with Brevo API
  *
  * @param to - Recipient email address
  * @param subject - Email subject
@@ -77,27 +48,49 @@ export async function sendEmail({
    replyTo?: string
 }) {
    try {
+      if (!BREVO_API_KEY) {
+         throw new Error(
+            'Missing Brevo API key. Please check BREVO_API_KEY environment variable.'
+         )
+      }
+
       const html = await render(template)
       const text = await render(template, { plainText: true })
 
-      const transporter = getTransporter()
-
-      const info = await transporter.sendMail({
-         from: `${FROM_EMAIL.name} <${FROM_EMAIL.email}>`,
-         to,
-         subject,
-         text,
-         html,
-         replyTo: replyTo || FROM_EMAIL.email,
+      const response = await fetch(BREVO_API_URL, {
+         method: 'POST',
+         headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'api-key': BREVO_API_KEY,
+         },
+         body: JSON.stringify({
+            sender: {
+               name: FROM_EMAIL.name,
+               email: FROM_EMAIL.email,
+            },
+            to: [{ email: to }],
+            subject,
+            htmlContent: html,
+            textContent: text,
+            replyTo: replyTo ? { email: replyTo } : { email: FROM_EMAIL.email },
+         }),
       })
+
+      if (!response.ok) {
+         const error = await response.json()
+         throw new Error(`Brevo API error: ${error.message || response.statusText}`)
+      }
+
+      const result = await response.json()
 
       console.log('📧 Email sent successfully:', {
          to,
          subject,
-         messageId: info.messageId,
+         messageId: result.messageId,
       })
 
-      return { success: true, messageId: info.messageId }
+      return { success: true, messageId: result.messageId }
    } catch (error) {
       console.error('❌ Failed to send email:', error)
       throw new Error(`Failed to send email: ${error.message}`)
@@ -105,7 +98,7 @@ export async function sendEmail({
 }
 
 /**
- * Send plain text email without template
+ * Send plain text email without template using Brevo API
  *
  * @param to - Recipient email address
  * @param subject - Email subject
@@ -127,24 +120,46 @@ export async function sendPlainEmail({
    replyTo?: string
 }) {
    try {
-      const transporter = getTransporter()
+      if (!BREVO_API_KEY) {
+         throw new Error(
+            'Missing Brevo API key. Please check BREVO_API_KEY environment variable.'
+         )
+      }
 
-      const info = await transporter.sendMail({
-         from: `${FROM_EMAIL.name} <${FROM_EMAIL.email}>`,
-         to,
-         subject,
-         text,
-         html: html || text,
-         replyTo: replyTo || FROM_EMAIL.email,
+      const response = await fetch(BREVO_API_URL, {
+         method: 'POST',
+         headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'api-key': BREVO_API_KEY,
+         },
+         body: JSON.stringify({
+            sender: {
+               name: FROM_EMAIL.name,
+               email: FROM_EMAIL.email,
+            },
+            to: [{ email: to }],
+            subject,
+            htmlContent: html || text,
+            textContent: text,
+            replyTo: replyTo ? { email: replyTo } : { email: FROM_EMAIL.email },
+         }),
       })
+
+      if (!response.ok) {
+         const error = await response.json()
+         throw new Error(`Brevo API error: ${error.message || response.statusText}`)
+      }
+
+      const result = await response.json()
 
       console.log('📧 Plain email sent successfully:', {
          to,
          subject,
-         messageId: info.messageId,
+         messageId: result.messageId,
       })
 
-      return { success: true, messageId: info.messageId }
+      return { success: true, messageId: result.messageId }
    } catch (error) {
       console.error('❌ Failed to send plain email:', error)
       throw new Error(`Failed to send plain email: ${error.message}`)
@@ -157,8 +172,25 @@ export async function sendPlainEmail({
  */
 export async function verifyEmailConnection() {
    try {
-      const transporter = getTransporter()
-      await transporter.verify()
+      if (!BREVO_API_KEY) {
+         throw new Error(
+            'Missing Brevo API key. Please check BREVO_API_KEY environment variable.'
+         )
+      }
+
+      // Test connection by calling Brevo account endpoint
+      const response = await fetch('https://api.brevo.com/v3/account', {
+         method: 'GET',
+         headers: {
+            'Accept': 'application/json',
+            'api-key': BREVO_API_KEY,
+         },
+      })
+
+      if (!response.ok) {
+         throw new Error(`Brevo API error: ${response.statusText}`)
+      }
+
       console.log('✅ Email service is ready')
       return true
    } catch (error) {

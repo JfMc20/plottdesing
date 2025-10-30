@@ -22,6 +22,14 @@ export async function generateMetadata(
       },
    })
 
+   // Handle product not found
+   if (!product) {
+      return {
+         title: 'Product Not Found',
+         description: 'The product you are looking for does not exist.',
+      }
+   }
+
    return {
       title: product.title,
       description: product.description,

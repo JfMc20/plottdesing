@@ -22,7 +22,7 @@ export async function PATCH(
       // Update the order item count
       const orderItem = await prisma.orderItem.update({
          where: {
-            orderId_productId: {
+            UniqueOrderItem: {
                orderId: params.orderId,
                productId: params.productId,
             },
@@ -57,7 +57,7 @@ export async function DELETE(
       // Delete the order item
       const orderItem = await prisma.orderItem.delete({
          where: {
-            orderId_productId: {
+            UniqueOrderItem: {
                orderId: params.orderId,
                productId: params.productId,
             },
