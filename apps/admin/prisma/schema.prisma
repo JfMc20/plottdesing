@@ -8,31 +8,33 @@ datasource db {
 }
 
 model User {
-  id                    String          @id @default(cuid())
-  email                 String?         @unique
-  phone                 String?         @unique
-  name                  String?
-  birthday              String?
-  avatarUrl             String? // Google profile photo or user uploaded avatar
-  emailUnsubscribeToken String?         @unique @default(cuid())
-  referralCode          String?         @unique
-  isBanned              Boolean         @default(false)
-  isEmailVerified       Boolean         @default(false)
-  isPhoneVerified       Boolean         @default(false)
-  isEmailSubscribed     Boolean         @default(false)
-  isPhoneSubscribed     Boolean         @default(false)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  supabaseId            String?         @unique
-  addresses             Address[]
-  cart                  Cart?
-  errors                Error[]
-  files                 File[]
-  notifications         Notification[]
-  orders                Order[]
-  payments              Payment[]
-  productReviews        ProductReview[]
-  wishlist              Product[]       @relation("Wishlist")
+  id                       String          @id @default(cuid())
+  email                    String?         @unique
+  phone                    String?         @unique
+  name                     String?
+  birthday                 String?
+  emailUnsubscribeToken    String?         @unique @default(cuid())
+  referralCode             String?         @unique
+  isBanned                 Boolean         @default(false)
+  isEmailVerified          Boolean         @default(false)
+  isPhoneVerified          Boolean         @default(false)
+  isEmailSubscribed        Boolean         @default(false)
+  isPhoneSubscribed        Boolean         @default(false)
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  supabaseId               String?         @unique
+  avatarUrl                String?
+  emailVerificationExpires DateTime?
+  emailVerificationToken   String?         @unique
+  addresses                Address[]
+  cart                     Cart?
+  errors                   Error[]
+  files                    File[]
+  notifications            Notification[]
+  orders                   Order[]
+  payments                 Payment[]
+  productReviews           ProductReview[]
+  wishlist                 Product[]       @relation("Wishlist")
 }
 
 model Cart {
@@ -152,6 +154,7 @@ model Order {
   discount       Float           @default(0)
   isPaid         Boolean         @default(false)
   isCompleted    Boolean         @default(false)
+  isArchived     Boolean         @default(false)
   discountCodeId String?
   addressId      String?
   userId         String

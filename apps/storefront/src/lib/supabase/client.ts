@@ -1,1 +1,2 @@
-export { createClient } from '@/lib/auth-shared/supabase/client'
+// Re-export from shared auth package
+export { createClient } from '@persepolis/auth'

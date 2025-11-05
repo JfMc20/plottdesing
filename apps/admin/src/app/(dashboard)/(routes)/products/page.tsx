@@ -9,8 +9,13 @@ import Link from 'next/link'
 import { ProductsTable } from './components/table'
 import { ProductColumn } from './components/table'
 
-export default async function ProductsPage() {
+export default async function ProductsPage({ searchParams }) {
+   const showArchived = searchParams?.archived === 'true'
+
    const products = await prisma.product.findMany({
+      where: {
+         isArchived: showArchived,
+      },
       include: {
          orders: true,
          categories: true,
@@ -38,14 +43,21 @@ export default async function ProductsPage() {
                title={`Products (${products.length})`}
                description="Manage products for your store"
             />
-            <Link href="/products/new">
-               <Button>
-                  <Plus className="mr-2 h-4" /> Add New
-               </Button>
-            </Link>
+            <div className="flex gap-2">
+               <Link href={showArchived ? '/products' : '/products?archived=true'}>
+                  <Button variant="outline">
+                     {showArchived ? 'Show Active' : 'Show Archived'}
+                  </Button>
+               </Link>
+               <Link href="/products/new">
+                  <Button>
+                     <Plus className="mr-2 h-4" /> Add New
+                  </Button>
+               </Link>
+            </div>
          </div>
          <Separator />
-         <ProductsTable data={formattedProducts} />
+         <ProductsTable data={formattedProducts} showArchived={showArchived} />
       </div>
    )
 }

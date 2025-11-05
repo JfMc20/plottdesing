@@ -89,9 +89,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             {({ open }) => (
                <Button
                   type="button"
-                  disabled={disabled}
+                  disabled={disabled || !open}
                   variant="secondary"
-                  onClick={() => open?.()}
+                  onClick={() => open && open()}
                   className="gap-2"
                >
                   <ImagePlus className="h-4 w-4" />

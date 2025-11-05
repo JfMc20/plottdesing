@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -63,6 +64,7 @@ export async function DELETE(
                isAvailable: false,
             },
          })
+         revalidatePath('/products')
          return NextResponse.json({
             ...archivedProduct,
             archived: true,
@@ -94,6 +96,7 @@ export async function DELETE(
             id: params.productId},
       })
 
+      revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
       console.error('[PRODUCT_DELETE]', error)
@@ -117,7 +120,7 @@ export async function PATCH(
       }
 
       const body = await req.json()
-      const { title, images, price, discount, stock, weight, width, height, length, categoryId, brandId, isFeatured, isAvailable } = body
+      const { title, images, price, discount, stock, weight, width, height, length, categoryId, brandId, isFeatured, isAvailable, isArchived } = body
 
       const updateData: any = {
          title,
@@ -126,6 +129,11 @@ export async function PATCH(
          stock,
          isFeatured,
          isAvailable,
+      }
+
+      // Update archived status if provided
+      if (isArchived !== undefined) {
+         updateData.isArchived = isArchived
       }
 
       // Update images if provided
@@ -169,6 +177,7 @@ export async function PATCH(
          data: updateData,
       })
 
+      revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
       console.error('[PRODUCT_PATCH]', error)

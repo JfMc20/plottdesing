@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -16,15 +17,15 @@ export async function GET(
          return new NextResponse('Brand id is required', { status: 400 })
       }
 
-      const category = await prisma.category.findUnique({
+      const brand = await prisma.brand.findUnique({
          where: {
             id: params.brandId,
          },
       })
 
-      return NextResponse.json(category)
+      return NextResponse.json(brand)
    } catch (error) {
-      console.error('[CATEGORY_GET]', error)
+      console.error('[BRAND_GET]', error)
       return new NextResponse('Internal error', { status: 500 })
    }
 }
@@ -44,15 +45,33 @@ export async function DELETE(
          return new NextResponse('Brand id is required', { status: 400 })
       }
 
-      const category = await prisma.category.delete({
+      // Check if brand has products
+      const brandWithProducts = await prisma.brand.findUnique({
+         where: { id: params.brandId },
+         include: { products: true },
+      })
+
+      if (!brandWithProducts) {
+         return new NextResponse('Brand not found', { status: 404 })
+      }
+
+      if (brandWithProducts.products.length > 0) {
+         return new NextResponse(
+            'Cannot delete brand with existing products. Please delete or reassign products first.',
+            { status: 400 }
+         )
+      }
+
+      const brand = await prisma.brand.delete({
          where: {
             id: params.brandId,
          },
       })
 
-      return NextResponse.json(category)
+      revalidatePath('/brands')
+      return NextResponse.json(brand)
    } catch (error) {
-      console.error('[CATEGORY_DELETE]', error)
+      console.error('[BRAND_DELETE]', error)
       return new NextResponse('Internal error', { status: 500 })
    }
 }
@@ -70,12 +89,11 @@ export async function PATCH(
 
       const body = await req.json()
 
-      const { title, description } = body
-      console.log('PATCH', body)
+      const { title, description, logo } = body
 
-      if (!title && !description) {
+      if (!title && !description && !logo) {
          return new NextResponse(
-            'At least one field (title or description) is required',
+            'At least one field is required',
             { status: 400 }
          )
       }
@@ -91,9 +109,11 @@ export async function PATCH(
          data: {
             ...(title && { title }),
             ...(description && { description }),
+            ...(logo && { logo }),
          },
       })
 
+      revalidatePath('/brands')
       return NextResponse.json(updatedBrand)
    } catch (error) {
       console.error('[BRAND_PATCH]', error)

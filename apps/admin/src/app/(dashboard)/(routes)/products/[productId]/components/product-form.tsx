@@ -31,7 +31,7 @@ import { Separator } from '@/components/ui/separator'
 import type { ProductWithIncludes } from '@/types/prisma'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Category } from '@prisma/client'
-import { Trash } from 'lucide-react'
+import { Archive, Trash } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -71,6 +71,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
    const router = useRouter()
 
    const [open, setOpen] = useState(false)
+   const [archiveOpen, setArchiveOpen] = useState(false)
    const [loading, setLoading] = useState(false)
 
    const title = initialData ? 'Edit product' : 'Create product'
@@ -139,25 +140,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }
    }
 
+   const onArchive = async () => {
+      try {
+         setLoading(true)
+
+         await fetch(`/api/products/${params.productId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ isArchived: !initialData?.isArchived }),
+            cache: 'no-store',
+         })
+
+         router.refresh()
+         router.push(`/products`)
+         toast.success(initialData?.isArchived ? 'Product unarchived.' : 'Product archived.')
+      } catch (error: any) {
+         toast.error('Something went wrong.')
+      } finally {
+         setLoading(false)
+         setArchiveOpen(false)
+      }
+   }
+
    const onDelete = async () => {
       try {
          setLoading(true)
 
-         const response = await fetch(`/api/products/${params.productId}`, {
+         await fetch(`/api/products/${params.productId}`, {
             method: 'DELETE',
             cache: 'no-store',
          })
 
-         const data = await response.json()
-
          router.refresh()
          router.push(`/products`)
-
-         if (data.archived) {
-            toast.success('Product archived due to existing orders.')
-         } else {
-            toast.success('Product deleted.')
-         }
+         toast.success('Product deleted.')
       } catch (error: any) {
          toast.error('Something went wrong.')
       } finally {
@@ -176,20 +191,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onConfirm={onDelete}
             loading={loading}
             title="Delete Product"
-            description={hasOrders ? "This product will be archived instead of deleted." : "This action cannot be undone."}
-            warning={hasOrders ? "This product has existing orders and cannot be permanently deleted. It will be archived and marked as unavailable instead." : undefined}
+            description="This action cannot be undone."
+         />
+         <AlertModal
+            isOpen={archiveOpen}
+            onClose={() => setArchiveOpen(false)}
+            onConfirm={onArchive}
+            loading={loading}
+            title={initialData?.isArchived ? "Unarchive Product" : "Archive Product"}
+            description={initialData?.isArchived ? "This will make the product visible again." : "This will hide the product from the store."}
          />
          <div className="flex items-center justify-between">
             <Heading title={title} description={description} />
             {initialData && (
-               <Button
-                  disabled={loading}
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setOpen(true)}
-               >
-                  <Trash className="h-4" />
-               </Button>
+               <div className="flex gap-2">
+                  <Button
+                     disabled={loading}
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setArchiveOpen(true)}
+                  >
+                     <Archive className="h-4" />
+                  </Button>
+                  {!hasOrders && (
+                     <Button
+                        disabled={loading}
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setOpen(true)}
+                     >
+                        <Trash className="h-4" />
+                     </Button>
+                  )}
+               </div>
             )}
          </div>
          <Separator />

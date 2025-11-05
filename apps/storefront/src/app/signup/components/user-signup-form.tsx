@@ -45,7 +45,7 @@ function SignupComponents({ isLoading, setIsLoading }) {
          const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-               redirectTo: `${window.location.origin}/auth/callback`,
+               redirectTo: `${window.location.origin}/auth/callback?type=signup`,
             },
          })
 
@@ -147,13 +147,12 @@ function SignupComponents({ isLoading, setIsLoading }) {
    }
 
    async function handleResendVerification() {
-      const { error } = await supabase.auth.resend({
-         type: 'signup',
-         email: email,
-      })
+      // Import from shared auth package
+      const { resendEmailVerificationClient } = await import('@persepolis/auth')
+      const result = await resendEmailVerificationClient(supabase, email)
 
-      if (error) {
-         throw new Error(error.message)
+      if (!result.success) {
+         throw new Error(result.error || 'Failed to resend verification email')
       }
    }
 

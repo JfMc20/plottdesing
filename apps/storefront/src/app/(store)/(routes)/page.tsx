@@ -12,6 +12,9 @@ import { isVariableValid } from '@/lib/utils'
 
 export default async function Index() {
    const products = await prisma.product.findMany({
+      where: {
+         isArchived: false,
+      },
       take: 12, // Limitar a 12 productos en la página principal
       orderBy: {
          createdAt: 'desc', // Mostrar los más recientes

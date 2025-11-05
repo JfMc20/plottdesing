@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
          },
       })
 
+      revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
       console.error('[PRODUCTS_POST]', error)
@@ -78,7 +80,11 @@ export async function GET(req: Request) {
       const categoryId = searchParams.get('categoryId') || undefined
       const isFeatured = searchParams.get('isFeatured')
 
-      const products = await prisma.product.findMany()
+      const products = await prisma.product.findMany({
+         where: {
+            isArchived: false,
+         },
+      })
 
       return NextResponse.json(products)
    } catch (error) {

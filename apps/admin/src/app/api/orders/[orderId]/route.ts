@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma'
 import { createOrderNotification, createPaymentNotification } from '@/lib/notifications'
 import { OrderStatusEnum } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function GET(

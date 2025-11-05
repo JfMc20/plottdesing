@@ -1,4 +1,5 @@
-import { getCurrentUser as getSupabaseUser } from '@/lib/auth-shared/utils/get-user'
+// Import from shared auth package
+import { getCurrentUser as getSupabaseUser } from '../../../../../packages/auth/src/utils/get-user'
 import prisma from '@/lib/prisma'
 
 /**
@@ -52,13 +53,16 @@ export async function getCurrentUser() {
 
     // If still not found, create new user
     if (!user && supabaseUser.email) {
+      // Use Supabase email verification status for all users
+      const isEmailVerified = !!supabaseUser.email_confirmed_at
+
       user = await prisma.user.create({
         data: {
           supabaseId: supabaseUser.id,
           email: supabaseUser.email,
           name: supabaseUser.user_metadata?.full_name || supabaseUser.email,
           avatarUrl,
-          isEmailVerified: true,
+          isEmailVerified,
           cart: {
             create: {},
           },

@@ -107,9 +107,15 @@ model Product {
   discount Float @default(0)
   stock    Int   @default(0)
 
+  weight Float?
+  width  Float?
+  height Float?
+  length Float?
+
   isPhysical  Boolean @default(true)
   isAvailable Boolean @default(false)
   isFeatured  Boolean @default(false)
+  isArchived  Boolean @default(false)
 
   orders         OrderItem[]
   cartItems      CartItem[]

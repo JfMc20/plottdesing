@@ -20,21 +20,16 @@ export default function ConfirmPage() {
                   </svg>
                </div>
                <h1 className="text-2xl font-semibold tracking-tight">
-                  Email Confirmed!
+                  Welcome!
                </h1>
                <p className="text-sm text-muted-foreground">
-                  Your email has been successfully verified. You can now log in to your account.
+                  Your account has been successfully created. You're all set to start exploring!
                </p>
             </div>
             <div className="grid gap-2">
-               <Link href="/login">
-                  <Button className="w-full">
-                     Go to Login
-                  </Button>
-               </Link>
                <Link href="/">
-                  <Button variant="outline" className="w-full">
-                     Back to Home
+                  <Button className="w-full">
+                     Get Started
                   </Button>
                </Link>
             </div>

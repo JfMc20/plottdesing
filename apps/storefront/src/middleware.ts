@@ -1,6 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { shouldBlockRequest, checkRateLimit } from './lib/security/ip-blocker'
+import { updateSessionWithUser } from '../../../packages/auth/src/supabase/middleware'
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -65,61 +65,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith(route)
   )
 
-  // Create Supabase client for session management
-  let response = NextResponse.next({
-    request: {
-      headers: req.headers,
-    },
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options) {
-          req.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options) {
-          req.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-    }
-  )
-
-  // Refresh session
-  const { data: { user } } = await supabase.auth.getUser()
+  // Update session using shared auth utility
+  const { response, user } = await updateSessionWithUser(req)
 
   // For protected routes, verify authentication
   if (isProtectedRoute && !user) {

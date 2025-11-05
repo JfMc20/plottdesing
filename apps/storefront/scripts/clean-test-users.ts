@@ -35,6 +35,11 @@ async function deleteUserFromSupabase(email: string) {
       return false
     }
 
+    if (!users) {
+      console.log(`ℹ️  No users data returned`)
+      return false
+    }
+
     const user = users.users.find(u => u.email === email)
 
     if (!user) {

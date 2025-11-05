@@ -67,15 +67,26 @@ export async function GET(request: NextRequest) {
   if (data.session) {
     console.log('✅ Session created successfully!')
     console.log('   User:', data.user?.email)
+    console.log('   User ID:', data.user?.id)
     console.log('   Session ID:', data.session.access_token.substring(0, 20) + '...')
     console.log('   Expires at:', new Date(data.session.expires_at! * 1000).toLocaleString())
+    console.log('   Created at:', data.user?.created_at)
+    console.log('   Email verified:', data.user?.email_confirmed_at)
+    console.log('   Provider:', data.user?.app_metadata?.provider)
 
-    // Check if this is an email confirmation (signup)
-    if (type === 'signup' || requestUrl.searchParams.has('confirmation_url')) {
-      console.log('📧 Email confirmation detected, redirecting to /auth/confirm')
+    // Check if this is a new user (created in the last 10 seconds)
+    const isNewUser = data.user?.created_at
+      ? (Date.now() - new Date(data.user.created_at).getTime()) < 10000
+      : false
+
+    console.log('   Is new user?:', isNewUser)
+
+    // Check if this is a new user signup or email confirmation
+    if (type === 'signup' || requestUrl.searchParams.has('confirmation_url') || isNewUser) {
+      console.log('🎉 New user detected - redirecting to welcome screen')
       response = NextResponse.redirect(`${origin}/auth/confirm`)
     } else {
-      console.log('🏠 Regular login, redirecting to', next)
+      console.log('🏠 Existing user login - redirecting to', next)
       response = NextResponse.redirect(`${origin}${next}`)
     }
 

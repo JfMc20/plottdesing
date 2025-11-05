@@ -11,7 +11,10 @@ export async function GET(
       }
 
       const product = await prisma.product.findUniqueOrThrow({
-         where: { id: params.productId },
+         where: { 
+            id: params.productId,
+            isArchived: false,
+         },
          include: {
             categories: true,
             brand: true,
