@@ -50,7 +50,7 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
       const zone = currentZones[zoneIndex]
       zone.printSizes = [
          ...(zone.printSizes || []),
-         { name: '', width: 0, height: 0, reference: '', area: 0 },
+         { name: '', width: 0, height: 0, reference: '', area: 0, costPerMeter: 0, printingCost: 0 },
       ]
       form.setValue('zones', [...currentZones])
    }
@@ -78,6 +78,17 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
          const width = parseFloat(zone.printSizes[printIndex].width) || 0
          const height = parseFloat(zone.printSizes[printIndex].height) || 0
          zone.printSizes[printIndex].area = width * height
+         
+         const linearMeters = height / 100
+         const costPerMeter = parseFloat(zone.printSizes[printIndex].costPerMeter) || 0
+         zone.printSizes[printIndex].printingCost = linearMeters * costPerMeter
+      }
+
+      if (field === 'costPerMeter') {
+         const height = parseFloat(zone.printSizes[printIndex].height) || 0
+         const linearMeters = height / 100
+         const costPerMeter = parseFloat(value) || 0
+         zone.printSizes[printIndex].printingCost = linearMeters * costPerMeter
       }
 
       form.setValue('zones', [...currentZones])
@@ -186,7 +197,7 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
                                        key={printIndex}
                                        className="flex items-end gap-2 p-3 bg-muted/50 rounded"
                                     >
-                                       <div className="flex-1 grid grid-cols-5 gap-2">
+                                       <div className="flex-1 grid grid-cols-7 gap-2">
                                           <div>
                                              <label className="text-xs font-medium">
                                                 Name
@@ -271,6 +282,39 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
                                                 disabled
                                                 value={
                                                    printSize.area?.toFixed(2) || '0'
+                                                }
+                                             />
+                                          </div>
+                                          <div>
+                                             <label className="text-xs font-medium">
+                                                Costo/metro
+                                                <HelpTooltip content="Precio por metro lineal de rollo (ej: 1m DTF 55x100cm = €21.58). Se calcula usando el alto del diseño." />
+                                             </label>
+                                             <Input
+                                                type="number"
+                                                step="0.01"
+                                                disabled={loading}
+                                                placeholder="21.58"
+                                                value={printSize.costPerMeter || ''}
+                                                onChange={(e) =>
+                                                   updatePrintSize(
+                                                      zoneIndex,
+                                                      printIndex,
+                                                      'costPerMeter',
+                                                      e.target.value
+                                                   )
+                                                }
+                                             />
+                                          </div>
+                                          <div>
+                                             <label className="text-xs font-medium">
+                                                Costo Impresión
+                                                <HelpTooltip content="Calculado: (alto en metros) × (precio por metro). Ej: 40cm = 0.4m × €21.58 = €8.63" />
+                                             </label>
+                                             <Input
+                                                disabled
+                                                value={
+                                                   printSize.printingCost?.toFixed(2) || '0.00'
                                                 }
                                              />
                                           </div>

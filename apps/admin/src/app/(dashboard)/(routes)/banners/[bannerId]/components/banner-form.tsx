@@ -118,41 +118,33 @@ export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
          />
          <div className="flex items-center justify-between">
             <Heading title={title} description={description} />
-            {initialData && (
+            <div className="flex gap-2">
+               {initialData && (
+                  <Button
+                     disabled={loading}
+                     variant="destructive"
+                     size="sm"
+                     onClick={() => setOpen(true)}
+                  >
+                     <Trash className="h-4" />
+                  </Button>
+               )}
                <Button
                   disabled={loading}
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setOpen(true)}
+                  type="submit"
+                  form="banner-form"
                >
-                  <Trash className="h-4" />
+                  {action}
                </Button>
-            )}
+            </div>
          </div>
          <Separator />
          <Form {...form}>
             <form
+               id="banner-form"
                onSubmit={form.handleSubmit(onSubmit)}
                className="space-y-8 w-full"
             >
-               <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                     <FormItem>
-                        <FormLabel>Background image</FormLabel>
-                        <FormControl>
-                           <ImageUpload
-                              value={field.value ? [field.value] : []}
-                              disabled={loading}
-                              onChange={(url) => field.onChange(url)}
-                              onRemove={() => field.onChange('')}
-                           />
-                        </FormControl>
-                        <FormMessage />
-                     </FormItem>
-                  )}
-               />
                <div className="md:grid md:grid-cols-3 gap-8">
                   <FormField
                      control={form.control}
@@ -172,9 +164,25 @@ export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
                      )}
                   />
                </div>
-               <Button disabled={loading} className="ml-auto" type="submit">
-                  {action}
-               </Button>
+               <Separator />
+               <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel>Banner Image</FormLabel>
+                        <FormControl>
+                           <ImageUpload
+                              value={field.value ? [field.value] : []}
+                              disabled={loading}
+                              onChange={(url) => field.onChange(url)}
+                              onRemove={() => field.onChange('')}
+                           />
+                        </FormControl>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
             </form>
          </Form>
       </>

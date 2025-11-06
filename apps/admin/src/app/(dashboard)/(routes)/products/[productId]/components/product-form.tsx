@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/form'
 import { Heading } from '@/components/ui/heading'
 import { Input } from '@/components/ui/input'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import dynamic from 'next/dynamic'
 
 // Import ImageUpload dynamically to avoid hydration errors
@@ -203,61 +204,45 @@ export const ProductForm: React.FC<ProductFormProps> = ({
          />
          <div className="flex items-center justify-between">
             <Heading title={title} description={description} />
-            {initialData && (
-               <div className="flex gap-2">
-                  <Button
-                     disabled={loading}
-                     variant="outline"
-                     size="sm"
-                     onClick={() => setArchiveOpen(true)}
-                  >
-                     <Archive className="h-4" />
-                  </Button>
-                  {!hasOrders && (
+            <div className="flex gap-2">
+               {initialData && (
+                  <>
                      <Button
                         disabled={loading}
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onClick={() => setOpen(true)}
+                        onClick={() => setArchiveOpen(true)}
                      >
-                        <Trash className="h-4" />
+                        <Archive className="h-4" />
                      </Button>
-                  )}
-               </div>
-            )}
+                     {!hasOrders && (
+                        <Button
+                           disabled={loading}
+                           variant="destructive"
+                           size="sm"
+                           onClick={() => setOpen(true)}
+                        >
+                           <Trash className="h-4" />
+                        </Button>
+                     )}
+                  </>
+               )}
+               <Button
+                  disabled={loading}
+                  type="submit"
+                  form="product-form"
+               >
+                  {action}
+               </Button>
+            </div>
          </div>
          <Separator />
          <Form {...form}>
             <form
+               id="product-form"
                onSubmit={form.handleSubmit(onSubmit)}
                className="space-y-8 w-full"
             >
-               <FormField
-                  control={form.control}
-                  name="images"
-                  render={({ field }) => (
-                     <FormItem>
-                        <FormLabel>Images</FormLabel>
-                        <FormControl>
-                           <ImageUpload
-                              value={field.value}
-                              disabled={loading}
-                              onChange={(url) =>
-                                 field.onChange([...field.value, url])
-                              }
-                              onRemove={(url) =>
-                                 field.onChange([
-                                    ...field.value.filter(
-                                       (current) => current !== url
-                                    ),
-                                 ])
-                              }
-                           />
-                        </FormControl>
-                        <FormMessage />
-                     </FormItem>
-                  )}
-               />
                <div className="md:grid md:grid-cols-3 gap-8">
                   <FormField
                      control={form.control}
@@ -299,7 +284,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="discount"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Discount</FormLabel>
+                           <FormLabel>
+                              Discount
+                              <HelpTooltip content="Descuento en el precio del producto. Se resta del precio base." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -317,7 +305,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="stock"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Stock</FormLabel>
+                           <FormLabel>
+                              Stock
+                              <HelpTooltip content="Cantidad disponible del producto en inventario." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -335,7 +326,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="weight"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Weight (kg)</FormLabel>
+                           <FormLabel>
+                              Weight (kg)
+                              <HelpTooltip content="Peso del producto para calcular costos de envío." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -354,7 +348,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="width"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Width (cm)</FormLabel>
+                           <FormLabel>
+                              Width (cm)
+                              <HelpTooltip content="Ancho del paquete para calcular costos de envío." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -373,7 +370,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="height"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Height (cm)</FormLabel>
+                           <FormLabel>
+                              Height (cm)
+                              <HelpTooltip content="Alto del paquete para calcular costos de envío." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -392,7 +392,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      name="length"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Length (cm)</FormLabel>
+                           <FormLabel>
+                              Length (cm)
+                              <HelpTooltip content="Largo del paquete para calcular costos de envío." />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  type="number"
@@ -517,9 +520,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                      )}
                   />
                </div>
-               <Button disabled={loading} className="ml-auto" type="submit">
-                  {action}
-               </Button>
+               <Separator />
+               <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel>
+                           Product Images
+                           <HelpTooltip content="Arrastra y suelta imágenes o haz clic para seleccionar. Las imágenes se suben automáticamente a Cloudinary." />
+                        </FormLabel>
+                        <FormControl>
+                           <ImageUpload
+                              value={field.value}
+                              disabled={loading}
+                              onChange={(url) =>
+                                 field.onChange([...field.value, url])
+                              }
+                              onRemove={(url) =>
+                                 field.onChange([
+                                    ...field.value.filter(
+                                       (current) => current !== url
+                                    ),
+                                 ])
+                              }
+                           />
+                        </FormControl>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
             </form>
          </Form>
       </>

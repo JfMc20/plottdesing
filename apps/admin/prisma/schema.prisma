@@ -177,6 +177,8 @@ model ProductPrintSize {
   height        Int
   reference     String
   area          Float
+  costPerMeter  Float       @default(0)
+  printingCost  Float       @default(0)
   productZoneId String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
