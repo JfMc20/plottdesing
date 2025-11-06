@@ -18,14 +18,18 @@ export const CategoriesTabs: React.FC<CategoriesTabsProps> = ({
    return (
       <Tabs defaultValue="categories" className="w-full">
          <TabsList>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="items">Category Items</TabsTrigger>
+            <TabsTrigger value="categories">
+               Categories ({categoriesData.length})
+            </TabsTrigger>
+            <TabsTrigger value="items">
+               Category Items ({categoryItemsData.length})
+            </TabsTrigger>
          </TabsList>
          <TabsContent value="categories">
             <CategoriesClient data={categoriesData} showArchived={showArchived} />
          </TabsContent>
          <TabsContent value="items">
-            <CategoryItemsClient data={categoryItemsData} />
+            <CategoryItemsClient data={categoryItemsData} hideHeader showArchived={showArchived} />
          </TabsContent>
       </Tabs>
    )

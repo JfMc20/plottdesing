@@ -25,6 +25,9 @@ export default async function CategoriesPage({
    })
 
    const categoryItems = await prisma.categoryItem.findMany({
+      where: {
+         isArchived: showArchived,
+      },
       include: {
          category: true,
          sizes: true,
@@ -49,8 +52,8 @@ export default async function CategoriesPage({
       <div className="my-6 block space-y-4">
          <div className="flex items-center justify-between">
             <Heading
-               title="Categories & Items"
-               description="Manage categories and category items for your store"
+               title="Categories Management"
+               description="Manage categories and category items"
             />
             <div className="flex gap-2">
                <Link href={`/categories${showArchived ? '' : '?archived=true'}`}>
@@ -58,9 +61,14 @@ export default async function CategoriesPage({
                      {showArchived ? 'Show Active' : 'Show Archived'}
                   </Button>
                </Link>
+               <Link href="/category-items/new">
+                  <Button variant="outline">
+                     <Plus className="mr-2 h-4" /> New Item
+                  </Button>
+               </Link>
                <Link href="/categories/new">
                   <Button>
-                     <Plus className="mr-2 h-4" /> Add New
+                     <Plus className="mr-2 h-4" /> New Category
                   </Button>
                </Link>
             </div>

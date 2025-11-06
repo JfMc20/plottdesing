@@ -50,7 +50,17 @@ export async function PATCH(
          sizes,
          zones,
          attributes,
+         isArchived,
       } = body
+
+      // Si solo se está actualizando isArchived, hacer update simple
+      if (isArchived !== undefined && Object.keys(body).length === 1) {
+         const categoryItem = await prisma.categoryItem.update({
+            where: { id: params.id },
+            data: { isArchived },
+         })
+         return NextResponse.json(categoryItem)
+      }
 
       // Eliminar en orden correcto (hijos primero)
       await prisma.$transaction(async (tx) => {

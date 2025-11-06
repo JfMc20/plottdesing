@@ -135,6 +135,7 @@ model CategoryItem {
   description String?
   skuPattern  String?
   basePrice   Decimal?
+  isArchived  Boolean            @default(false)
   categoryId  String
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
