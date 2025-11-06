@@ -19,7 +19,7 @@ export function MainNav({
       {
          href: `/categories`,
          label: 'Categories',
-         active: pathname.includes(`/categories`),
+         active: pathname.includes(`/categories`) || pathname.includes(`/category-items`),
       },
       {
          href: `/products`,

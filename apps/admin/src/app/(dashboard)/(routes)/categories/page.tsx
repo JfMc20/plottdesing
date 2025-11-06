@@ -5,13 +5,33 @@ import prisma from '@/lib/prisma'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 
-import { CategoriesClient, CategoryColumn } from './components/table'
+import { CategoryColumn } from './components/table'
+import { CategoriesTabs } from './components/categories-tabs'
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage({
+   searchParams,
+}: {
+   searchParams: { archived?: string }
+}) {
+   const showArchived = searchParams.archived === 'true'
+
    const categories = await prisma.category.findMany({
+      where: {
+         isArchived: showArchived,
+      },
       include: {
          products: true,
       },
+   })
+
+   const categoryItems = await prisma.categoryItem.findMany({
+      include: {
+         category: true,
+         sizes: true,
+         zones: true,
+         attributes: true,
+      },
+      orderBy: { createdAt: 'desc' },
    })
 
    const formattedCategories: CategoryColumn[] = categories.map((category) => ({
@@ -20,21 +40,37 @@ export default async function CategoriesPage() {
       products: category.products.length,
    }))
 
+   const serializedCategoryItems = categoryItems.map((item) => ({
+      ...item,
+      basePrice: Number(item.basePrice),
+   }))
+
    return (
       <div className="my-6 block space-y-4">
          <div className="flex items-center justify-between">
             <Heading
-               title={`Categories (${categories.length})`}
-               description="Manage categories for your store"
+               title="Categories & Items"
+               description="Manage categories and category items for your store"
             />
-            <Link href="/categories/new">
-               <Button>
-                  <Plus className="mr-2 h-4" /> Add New
-               </Button>
-            </Link>
+            <div className="flex gap-2">
+               <Link href={`/categories${showArchived ? '' : '?archived=true'}`}>
+                  <Button variant="outline">
+                     {showArchived ? 'Show Active' : 'Show Archived'}
+                  </Button>
+               </Link>
+               <Link href="/categories/new">
+                  <Button>
+                     <Plus className="mr-2 h-4" /> Add New
+                  </Button>
+               </Link>
+            </div>
          </div>
          <Separator />
-         <CategoriesClient data={formattedCategories} />
+         <CategoriesTabs 
+            categoriesData={formattedCategories} 
+            categoryItemsData={serializedCategoryItems}
+            showArchived={showArchived}
+         />
       </div>
    )
 }

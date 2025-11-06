@@ -5,8 +5,8 @@ export async function GET(req: NextRequest) {
    const supabase = await createClient()
    await supabase.auth.signOut()
 
-   const response = NextResponse.redirect(new URL(`/login`, req.url))
-   return response
+   const baseUrl = process.env.NEXT_PUBLIC_URL || req.nextUrl.origin
+   return NextResponse.redirect(`${baseUrl}/login`)
 }
 
 export async function POST() {

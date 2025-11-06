@@ -22,7 +22,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Banner, Category } from '@prisma/client'
-import { Trash } from 'lucide-react'
+import { Archive, Trash } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -31,7 +31,7 @@ import * as z from 'zod'
 
 const formSchema = z.object({
    title: z.string().min(2),
-   description: z.string().min(1),
+   bannerId: z.string().min(1),
 })
 
 type CategoryFormValues = z.infer<typeof formSchema>
@@ -49,6 +49,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
    const router = useRouter()
 
    const [open, setOpen] = useState(false)
+   const [archiveOpen, setArchiveOpen] = useState(false)
    const [loading, setLoading] = useState(false)
 
    const title = initialData ? 'Edit category' : 'Create category'
@@ -60,7 +61,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       resolver: zodResolver(formSchema),
       defaultValues: initialData || {
          title: '',
-         description: '',
+         bannerId: '',
       },
    })
 
@@ -90,22 +91,47 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       }
    }
 
-   const onDelete = async () => {
+   const onArchive = async () => {
       try {
          setLoading(true)
 
          await fetch(`/api/categories/${params.categoryId}`, {
-            method: 'DELETE',
+            method: 'PATCH',
+            body: JSON.stringify({ isArchived: !initialData?.isArchived }),
             cache: 'no-store',
          })
 
          router.refresh()
          router.push(`/categories`)
+         toast.success(initialData?.isArchived ? 'Category unarchived.' : 'Category archived.')
+      } catch (error: any) {
+         toast.error('Something went wrong.')
+      } finally {
+         setLoading(false)
+         setArchiveOpen(false)
+      }
+   }
+
+   const onDelete = async () => {
+      try {
+         setLoading(true)
+
+         const response = await fetch(`/api/categories/${params.categoryId}`, {
+            method: 'DELETE',
+            cache: 'no-store',
+         })
+
+         if (!response.ok) {
+            const errorText = await response.text()
+            toast.error(errorText || 'Failed to delete category')
+            return
+         }
+
+         router.refresh()
+         router.push(`/categories`)
          toast.success('Category deleted.')
       } catch (error: any) {
-         toast.error(
-            'Make sure you removed all products using this category first.'
-         )
+         toast.error('Something went wrong.')
       } finally {
          setLoading(false)
          setOpen(false)
@@ -120,17 +146,35 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             onConfirm={onDelete}
             loading={loading}
          />
+         <AlertModal
+            isOpen={archiveOpen}
+            onClose={() => setArchiveOpen(false)}
+            onConfirm={onArchive}
+            loading={loading}
+            title={initialData?.isArchived ? "Unarchive Category" : "Archive Category"}
+            description={initialData?.isArchived ? "This will make the category visible again." : "This will hide the category from the store."}
+         />
          <div className="flex items-center justify-between">
             <Heading title={title} description={description} />
             {initialData && (
-               <Button
-                  disabled={loading}
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setOpen(true)}
-               >
-                  <Trash className="h-4" />
-               </Button>
+               <div className="flex gap-2">
+                  <Button
+                     disabled={loading}
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setArchiveOpen(true)}
+                  >
+                     <Archive className="h-4" />
+                  </Button>
+                  <Button
+                     disabled={loading}
+                     variant="destructive"
+                     size="sm"
+                     onClick={() => setOpen(true)}
+                  >
+                     <Trash className="h-4" />
+                  </Button>
+               </div>
             )}
          </div>
          <Separator />
@@ -159,7 +203,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
                   />
                   <FormField
                      control={form.control}
-                     name="description"
+                     name="bannerId"
                      render={({ field }) => (
                         <FormItem>
                            <FormLabel>Banner</FormLabel>

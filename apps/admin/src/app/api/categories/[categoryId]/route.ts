@@ -44,6 +44,20 @@ export async function DELETE(
          return new NextResponse('Category id is required', { status: 400 })
       }
 
+      // Check if category has CategoryItems
+      const categoryItemsCount = await prisma.categoryItem.count({
+         where: {
+            categoryId: params.categoryId,
+         },
+      })
+
+      if (categoryItemsCount > 0) {
+         return new NextResponse(
+            'Cannot delete category with associated items. Please remove all category items first.',
+            { status: 400 }
+         )
+      }
+
       const category = await prisma.category.delete({
          where: {
             id: params.categoryId,
@@ -70,33 +84,31 @@ export async function PATCH(
 
       const body = await req.json()
 
-      const { title, description, bannerId } = body
-
-      if (!bannerId) {
-         return new NextResponse('Banner ID is required', { status: 400 })
-      }
-
-      if (!title) {
-         return new NextResponse('Name is required', { status: 400 })
-      }
+      const { title, description, bannerId, isArchived } = body
 
       if (!params.categoryId) {
          return new NextResponse('Category id is required', { status: 400 })
+      }
+
+      const updateData: any = {}
+      
+      if (title !== undefined) updateData.title = title
+      if (description !== undefined) updateData.description = description
+      if (isArchived !== undefined) updateData.isArchived = isArchived
+      
+      if (bannerId) {
+         updateData.banners = {
+            connect: {
+               id: bannerId,
+            },
+         }
       }
 
       const updatedCategory = await prisma.category.update({
          where: {
             id: params.categoryId,
          },
-         data: {
-            title,
-            description,
-            banners: {
-               connect: {
-                  id: bannerId,
-               },
-            },
-         },
+         data: updateData,
       })
 
       return NextResponse.json(updatedCategory)

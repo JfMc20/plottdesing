@@ -137,12 +137,79 @@ model Category {
   id          String  @id @default(cuid())
   title       String  @unique
   description String?
+  isArchived  Boolean @default(false)
 
-  products Product[]
-  banners  Banner[]
+  products     Product[]
+  banners      Banner[]
+  categoryItems CategoryItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CategoryItem {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  skuPattern  String?
+  basePrice   Float              @default(0)
+  categoryId  String
+  category    Category           @relation(fields: [categoryId], references: [id])
+  sizes       ProductSize[]
+  zones       ProductZone[]
+  attributes  ProductAttribute[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([categoryId, name])
+}
+
+model ProductSize {
+  id             String       @id @default(cuid())
+  name           String
+  code           String
+  displayOrder   Int          @default(0)
+  categoryItemId String
+  categoryItem   CategoryItem @relation(fields: [categoryItemId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+}
+
+model ProductZone {
+  id             String             @id @default(cuid())
+  name           String
+  code           String
+  displayOrder   Int                @default(0)
+  categoryItemId String
+  categoryItem   CategoryItem       @relation(fields: [categoryItemId], references: [id], onDelete: Cascade)
+  printSizes     ProductPrintSize[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+}
+
+model ProductPrintSize {
+  id            String      @id @default(cuid())
+  name          String
+  width         Float
+  height        Float
+  reference     String?
+  area          Float
+  productZoneId String
+  productZone   ProductZone @relation(fields: [productZoneId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+}
+
+model ProductAttribute {
+  id             String       @id @default(cuid())
+  name           String
+  type           String
+  required       Boolean      @default(false)
+  options        String?
+  categoryItemId String
+  categoryItem   CategoryItem @relation(fields: [categoryItemId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
 }
 
 model ProductReview {
@@ -176,6 +243,7 @@ model Order {
 
   isPaid      Boolean @default(false)
   isCompleted Boolean @default(false)
+  isArchived  Boolean @default(false)
 
   payments   Payment[]
   orderItems OrderItem[]

@@ -118,13 +118,80 @@ model Product {
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  title       String    @unique
+  id          String         @id @default(cuid())
+  title       String         @unique
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  banners     Banner[]  @relation("BannerToCategory")
-  products    Product[] @relation("CategoryToProduct")
+  isArchived  Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  banners     Banner[]       @relation("BannerToCategory")
+  products    Product[]      @relation("CategoryToProduct")
+  items       CategoryItem[]
+}
+
+model CategoryItem {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  skuPattern  String?
+  basePrice   Decimal?
+  categoryId  String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  category    Category           @relation(fields: [categoryId], references: [id])
+  sizes       ProductSize[]
+  zones       ProductZone[]
+  attributes  ProductAttribute[]
+
+  @@unique([categoryId, name])
+}
+
+model ProductSize {
+  id             String       @id @default(cuid())
+  name           String
+  code           String?
+  displayOrder   Int          @default(0)
+  categoryItemId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  categoryItem   CategoryItem @relation(fields: [categoryItemId], references: [id])
+}
+
+model ProductZone {
+  id             String             @id @default(cuid())
+  name           String
+  code           String?
+  displayOrder   Int                @default(0)
+  categoryItemId String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  categoryItem   CategoryItem       @relation(fields: [categoryItemId], references: [id])
+  printSizes     ProductPrintSize[]
+}
+
+model ProductPrintSize {
+  id            String      @id @default(cuid())
+  name          String
+  width         Int
+  height        Int
+  reference     String
+  area          Float
+  productZoneId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  productZone   ProductZone @relation(fields: [productZoneId], references: [id])
+}
+
+model ProductAttribute {
+  id             String       @id @default(cuid())
+  name           String
+  type           String
+  required       Boolean      @default(false)
+  options        Json?
+  categoryItemId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  categoryItem   CategoryItem @relation(fields: [categoryItemId], references: [id])
 }
 
 model ProductReview {
