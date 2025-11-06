@@ -7,7 +7,7 @@ import { LogoutButton } from './logout-button'
 export default async function Navbar() {
    return (
       <div className="border-b flex justify-between h-16 items-center px-[1.4rem] md:px-[4rem] lg:px-[6rem] xl:px-[8rem] 2xl:px-[12rem]">
-         <div className="flex gap-6">
+         <div className="flex gap-6 items-center">
             <Link href="/" className="font-bold tracking-wider">
                ADMIN
             </Link>
