@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Input } from '@/components/ui/input'
 import {
    Select,
@@ -66,7 +67,10 @@ export const AttributesManager: React.FC<AttributesManagerProps> = ({
       <div className="space-y-4">
          <div className="flex items-center justify-between">
             <div>
-               <h3 className="text-lg font-medium">Product Attributes</h3>
+               <h3 className="text-lg font-medium">
+                  Product Attributes
+                  <HelpTooltip content="Custom fields for product personalization. Examples: Color picker, Text input for custom names, Size selector, Material options, etc." />
+               </h3>
                <p className="text-sm text-muted-foreground">
                   Add custom fields for product customization
                </p>

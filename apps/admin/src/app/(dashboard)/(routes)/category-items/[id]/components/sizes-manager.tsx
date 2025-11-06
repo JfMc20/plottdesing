@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Input } from '@/components/ui/input'
 import { Plus, Trash } from 'lucide-react'
 import { UseFormReturn } from 'react-hook-form'
@@ -90,7 +91,10 @@ export const SizesManager: React.FC<SizesManagerProps> = ({
                            />
                         </div>
                         <div>
-                           <label className="text-sm font-medium">Order</label>
+                           <label className="text-sm font-medium">
+                              Display Order
+                              <HelpTooltip content="Order in which sizes appear (1=first, 2=second, etc.)" />
+                           </label>
                            <Input
                               type="number"
                               disabled={loading}

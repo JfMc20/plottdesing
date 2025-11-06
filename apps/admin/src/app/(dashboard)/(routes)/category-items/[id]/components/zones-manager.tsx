@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Trash } from 'lucide-react'
@@ -245,6 +246,7 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
                                           <div>
                                              <label className="text-xs font-medium">
                                                 Reference
+                                                <HelpTooltip content="Paper size reference (e.g., A4, Letter). Used to standardize print area calculations." />
                                              </label>
                                              <Input
                                                 disabled={loading}
@@ -263,6 +265,7 @@ export const ZonesManager: React.FC<ZonesManagerProps> = ({
                                           <div>
                                              <label className="text-xs font-medium">
                                                 Area (cm²)
+                                                <HelpTooltip content="Automatically calculated from width × height. Used for pricing based on print area." />
                                              </label>
                                              <Input
                                                 disabled

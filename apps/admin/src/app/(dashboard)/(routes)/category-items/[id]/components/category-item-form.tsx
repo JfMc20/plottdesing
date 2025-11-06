@@ -11,6 +11,7 @@ import {
    FormMessage,
 } from '@/components/ui/form'
 import { Heading } from '@/components/ui/heading'
+import { HelpTooltip } from '@/components/ui/help-tooltip'
 import { Input } from '@/components/ui/input'
 import {
    Select,
@@ -251,7 +252,10 @@ export const CategoryItemForm: React.FC<CategoryItemFormProps> = ({
                      name="skuPattern"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>SKU Pattern</FormLabel>
+                           <FormLabel>
+                              SKU Pattern
+                              <HelpTooltip content="Template for generating product codes. Use {SIZE}, {COLOR}, etc. Example: TSHIRT-{SIZE}-{COLOR} generates TSHIRT-M-RED" />
+                           </FormLabel>
                            <FormControl>
                               <Input
                                  disabled={loading}
