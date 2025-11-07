@@ -14,6 +14,9 @@ interface ImageUploadProps {
    className?: string
 }
 
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
 const ImageUpload: React.FC<ImageUploadProps> = ({
    disabled,
    onChange,
@@ -30,39 +33,55 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setIsMounted(true)
    }, [])
 
-   const uploadToCloudinary = async (file: File) => {
+   const validateFile = (file: File): string | null => {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+         return `Invalid file type: ${file.type}. Allowed: JPG, PNG, WEBP`
+      }
+      if (file.size > MAX_FILE_SIZE) {
+         return 'File too large. Maximum size: 10MB'
+      }
+      return null
+   }
+
+   const uploadFiles = async (files: File[]) => {
       const formData = new FormData()
-      formData.append('file', file)
-      formData.append('upload_preset', 'plottdesign')
+      files.forEach(file => formData.append('files', file))
+      formData.append('isAdmin', 'true')
 
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-
-      const response = await fetch(
-         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-         {
-            method: 'POST',
-            body: formData,
-         }
-      )
+      const response = await fetch('/api/upload', {
+         method: 'POST',
+         body: formData,
+      })
 
       if (!response.ok) {
-         throw new Error('Upload failed')
+         const error = await response.json()
+         throw new Error(error.error || 'Upload failed')
       }
 
       const data = await response.json()
-      return data.secure_url
+      return data.urls
    }
 
    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
+      const files = Array.from(e.target.files || [])
+      if (files.length === 0) return
+
+      // Validate all files
+      for (const file of files) {
+         const error = validateFile(file)
+         if (error) {
+            alert(error)
+            return
+         }
+      }
 
       try {
          setIsUploading(true)
-         const url = await uploadToCloudinary(file)
-         onChange(url)
+         const urls = await uploadFiles(files)
+         urls.forEach((url: string) => onChange(url))
       } catch (error) {
          console.error('Upload error:', error)
+         alert(error instanceof Error ? error.message : 'Upload failed')
       } finally {
          setIsUploading(false)
          if (fileInputRef.current) {
@@ -77,15 +96,28 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       if (disabled || isUploading) return
 
-      const file = e.dataTransfer.files?.[0]
-      if (!file || !file.type.startsWith('image/')) return
+      const files = Array.from(e.dataTransfer.files).filter(file => 
+         file.type.startsWith('image/')
+      )
+      
+      if (files.length === 0) return
+
+      // Validate all files
+      for (const file of files) {
+         const error = validateFile(file)
+         if (error) {
+            alert(error)
+            return
+         }
+      }
 
       try {
          setIsUploading(true)
-         const url = await uploadToCloudinary(file)
-         onChange(url)
+         const urls = await uploadFiles(files)
+         urls.forEach((url: string) => onChange(url))
       } catch (error) {
          console.error('Upload error:', error)
+         alert(error instanceof Error ? error.message : 'Upload failed')
       } finally {
          setIsUploading(false)
       }
@@ -136,16 +168,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   <p className="text-sm font-medium">
                      {isUploading
                         ? 'Uploading...'
-                        : 'Drag and drop your image here'}
+                        : 'Drag and drop your images here'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                     or click the button below
+                     or click the button below (multiple files supported)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                     JPG, PNG, WEBP up to 10MB each
                   </p>
                </div>
                <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  multiple
                   onChange={handleFileChange}
                   disabled={disabled || isUploading}
                   className="hidden"
@@ -158,7 +194,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   className="gap-2"
                >
                   <ImagePlus className="h-4 w-4" />
-                  Select Image
+                  Select Images
                </Button>
             </div>
          </div>
@@ -201,3 +237,4 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 ImageUpload.displayName = 'ImageUpload'
 
 export default ImageUpload
+

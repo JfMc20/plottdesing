@@ -31,7 +31,7 @@ export async function PATCH(
             count,
          },
          include: {
-            product: true,
+            Product: true,
             order: true,
          },
       })

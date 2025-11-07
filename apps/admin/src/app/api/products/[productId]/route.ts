@@ -120,7 +120,26 @@ export async function PATCH(
       }
 
       const body = await req.json()
-      const { title, images, price, discount, stock, weight, width, height, length, categoryId, brandId, isFeatured, isAvailable, isArchived } = body
+      const { 
+         title, 
+         description,
+         images, 
+         price, 
+         discount, 
+         stock, 
+         weight, 
+         width, 
+         height, 
+         length, 
+         categoryId, 
+         brandId, 
+         categoryItemId, 
+         isFeatured, 
+         isAvailable, 
+         isArchived, 
+         isCustomizable,
+         isPrintOnDemand 
+      } = body
 
       const updateData: any = {
          title,
@@ -131,9 +150,33 @@ export async function PATCH(
          isAvailable,
       }
 
+      // Update description if provided
+      if (description !== undefined) {
+         updateData.description = description || null
+      }
+
       // Update archived status if provided
       if (isArchived !== undefined) {
          updateData.isArchived = isArchived
+      }
+
+      // Update isCustomizable if provided
+      if (isCustomizable !== undefined) {
+         updateData.isCustomizable = isCustomizable
+      }
+
+      // Update isPrintOnDemand if provided
+      if (isPrintOnDemand !== undefined) {
+         updateData.isPrintOnDemand = isPrintOnDemand
+      }
+
+      // Update categoryItemId if provided
+      if (categoryItemId !== undefined) {
+         if (categoryItemId) {
+            updateData.categoryItem = { connect: { id: categoryItemId } }
+         } else {
+            updateData.categoryItem = { disconnect: true }
+         }
       }
 
       // Update images if provided

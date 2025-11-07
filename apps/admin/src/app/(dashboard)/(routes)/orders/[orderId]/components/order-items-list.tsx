@@ -27,7 +27,7 @@ export const OrderItemsList: React.FC<OrderItemsListProps> = ({ order }) => {
    const [editingItemId, setEditingItemId] = useState<string | null>(null)
    const [newCount, setNewCount] = useState<number>(1)
 
-   const orderItems = order.orderItems || []
+   const orderItems = order.OrderItem || []
 
    const calculateItemSubtotal = (price: number, discount: number, count: number) => {
       return ((price - discount) * count).toFixed(2)

@@ -14,10 +14,28 @@ export default async function Index() {
    const products = await prisma.product.findMany({
       where: {
          isArchived: false,
+         isAvailable: true,
+         isCustomizable: false,
       },
-      take: 12, // Limitar a 12 productos en la página principal
+      take: 12,
       orderBy: {
-         createdAt: 'desc', // Mostrar los más recientes
+         createdAt: 'desc',
+      },
+      include: {
+         brand: true,
+         categories: true,
+      },
+   })
+
+   const customizableProducts = await prisma.product.findMany({
+      where: {
+         isArchived: false,
+         isAvailable: true,
+         isCustomizable: true,
+      },
+      take: 12,
+      orderBy: {
+         createdAt: 'desc',
       },
       include: {
          brand: true,
@@ -35,6 +53,7 @@ export default async function Index() {
    return (
       <div className="flex flex-col border-neutral-200 dark:border-neutral-700">
          <Carousel images={banners.map((obj) => obj.image)} />
+         
          <Separator className="my-8" />
          <Heading
             title="Products"
@@ -45,6 +64,18 @@ export default async function Index() {
          ) : (
             <ProductSkeletonGrid />
          )}
+         
+         {isVariableValid(customizableProducts) && customizableProducts.length > 0 && (
+            <>
+               <Separator className="my-8" />
+               <Heading
+                  title="Customizable Products"
+                  description="Design your own unique products with our customization options."
+               />
+               <ProductGrid products={customizableProducts} />
+            </>
+         )}
+         
          <Separator className="my-8" />
          {isVariableValid(blogs) ? (
             <BlogPostGrid blogs={blogs} />

@@ -25,9 +25,9 @@ export default async function OrdersPage({ searchParams }) {
       where: {
          userId,
          isPaid,
-         orderItems: {
+         OrderItem: {
             some: {
-               product: {
+               Product: {
                   brand: {
                      title: {
                         contains: brand,
@@ -49,9 +49,9 @@ export default async function OrdersPage({ searchParams }) {
          },
       },
       include: {
-         orderItems: {
+         OrderItem: {
             include: {
-               product: true,
+               Product: true,
             },
          },
       },

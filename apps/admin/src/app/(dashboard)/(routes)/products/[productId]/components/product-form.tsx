@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/form'
 import { Heading } from '@/components/ui/heading'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { HelpTooltip } from '@/components/ui/help-tooltip'
 import dynamic from 'next/dynamic'
 
@@ -41,6 +42,7 @@ import * as z from 'zod'
 
 const formSchema = z.object({
    title: z.string().min(1),
+   description: z.string().optional(),
    images: z.string().array(),
    price: z.coerce.number().min(1),
    discount: z.coerce.number().min(0),
@@ -51,6 +53,8 @@ const formSchema = z.object({
    length: z.coerce.number().min(0).optional(),
    categoryId: z.string().min(1),
    brandId: z.string().min(1),
+   categoryItemId: z.string().optional(),
+   productType: z.enum(['normal', 'customizable', 'print-on-demand']).default('normal'),
    isFeatured: z.boolean().default(false).optional(),
    isAvailable: z.boolean().default(false).optional(),
 })
@@ -61,12 +65,14 @@ interface ProductFormProps {
    initialData: ProductWithIncludes | null
    categories: Category[]
    brands: { id: string; title: string }[]
+   categoryItems: { id: string; name: string; categoryId: string }[]
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
    initialData,
    categories,
    brands,
+   categoryItems,
 }) => {
    const params = useParams()
    const router = useRouter()
@@ -74,6 +80,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
    const [open, setOpen] = useState(false)
    const [archiveOpen, setArchiveOpen] = useState(false)
    const [loading, setLoading] = useState(false)
+   const [selectedCategoryId, setSelectedCategoryId] = useState(
+      initialData?.categories?.[0]?.id || ''
+   )
+
+   // Filter category items based on selected category
+   const filteredCategoryItems = categoryItems.filter(
+      item => item.categoryId === selectedCategoryId
+   )
 
    const title = initialData ? 'Edit product' : 'Create product'
    const description = initialData ? 'Edit a product.' : 'Add a new product'
@@ -83,6 +97,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
    const defaultValues = initialData
       ? {
            ...initialData,
+           description: initialData.description || '',
            price: parseFloat(String(initialData?.price.toFixed(2))),
            discount: parseFloat(String(initialData?.discount.toFixed(2))),
            weight: initialData.weight || undefined,
@@ -91,9 +106,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
            length: initialData.length || undefined,
            categoryId: initialData.categories?.[0]?.id || '',
            brandId: initialData.brandId,
+           categoryItemId: initialData.categoryItemId || '',
+           productType: initialData.isPrintOnDemand 
+              ? 'print-on-demand' as const
+              : initialData.isCustomizable 
+                 ? 'customizable' as const
+                 : 'normal' as const,
         }
       : {
            title: '',
+           description: '',
            images: [],
            price: 0,
            discount: 0,
@@ -104,6 +126,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
            length: undefined,
            categoryId: '',
            brandId: '',
+           categoryItemId: '',
+           productType: 'normal' as const,
            isFeatured: false,
            isAvailable: false,
         }
@@ -117,16 +141,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       try {
          setLoading(true)
 
+         // Convert productType to booleans
+         const submitData = {
+            ...data,
+            isCustomizable: data.productType === 'customizable',
+            isPrintOnDemand: data.productType === 'print-on-demand',
+         }
+
          if (initialData) {
             await fetch(`/api/products/${params.productId}`, {
                method: 'PATCH',
-               body: JSON.stringify(data),
+               body: JSON.stringify(submitData),
                cache: 'no-store',
             })
          } else {
             await fetch(`/api/products`, {
                method: 'POST',
-               body: JSON.stringify(data),
+               body: JSON.stringify(submitData),
                cache: 'no-store',
             })
          }
@@ -254,6 +285,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                               <Input
                                  disabled={loading}
                                  placeholder="Product title"
+                                 {...field}
+                              />
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="description"
+                     render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                           <FormLabel>Description</FormLabel>
+                           <FormControl>
+                              <Textarea
+                                 disabled={loading}
+                                 placeholder="Product description"
+                                 rows={3}
                                  {...field}
                               />
                            </FormControl>
@@ -417,7 +466,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                            <FormLabel>Category</FormLabel>
                            <Select
                               disabled={loading}
-                              onValueChange={field.onChange}
+                              onValueChange={(value) => {
+                                 field.onChange(value)
+                                 setSelectedCategoryId(value)
+                                 // Reset categoryItemId when category changes
+                                 form.setValue('categoryItemId', '')
+                              }}
                               value={field.value}
                               defaultValue={field.value}
                            >
@@ -436,6 +490,44 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                                        value={category.id}
                                     >
                                        {category.title}
+                                    </SelectItem>
+                                 ))}
+                              </SelectContent>
+                           </Select>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="categoryItemId"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>
+                              Category Item
+                              <HelpTooltip content="Tipo específico de producto dentro de la categoría seleccionada." />
+                           </FormLabel>
+                           <Select
+                              disabled={loading || !selectedCategoryId}
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              defaultValue={field.value}
+                           >
+                              <FormControl>
+                                 <SelectTrigger>
+                                    <SelectValue
+                                       defaultValue={field.value}
+                                       placeholder={selectedCategoryId ? "Select a category item" : "Select category first"}
+                                    />
+                                 </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                 {filteredCategoryItems.map((item) => (
+                                    <SelectItem
+                                       key={item.id}
+                                       value={item.id}
+                                    >
+                                       {item.name}
                                     </SelectItem>
                                  ))}
                               </SelectContent>
@@ -473,6 +565,45 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                                        {brand.title}
                                     </SelectItem>
                                  ))}
+                              </SelectContent>
+                           </Select>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="productType"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>
+                              Product Type
+                              <HelpTooltip content="Normal: Regular product with stock. Customizable: Customer can personalize. Print on Demand: Unlimited stock." />
+                           </FormLabel>
+                           <Select
+                              disabled={loading}
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              defaultValue={field.value}
+                           >
+                              <FormControl>
+                                 <SelectTrigger>
+                                    <SelectValue
+                                       defaultValue={field.value}
+                                       placeholder="Select product type"
+                                    />
+                                 </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                 <SelectItem value="normal">
+                                    Normal Product
+                                 </SelectItem>
+                                 <SelectItem value="customizable">
+                                    Customizable Product
+                                 </SelectItem>
+                                 <SelectItem value="print-on-demand">
+                                    Print on Demand
+                                 </SelectItem>
                               </SelectContent>
                            </Select>
                            <FormMessage />

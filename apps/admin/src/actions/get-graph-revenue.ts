@@ -11,9 +11,9 @@ export const getGraphRevenue = async (): Promise<GraphData[]> => {
          isPaid: true,
       },
       include: {
-         orderItems: {
+         OrderItem: {
             include: {
-               product: { include: { categories: true } },
+               Product: { include: { categories: true } },
             },
          },
       },

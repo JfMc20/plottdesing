@@ -29,9 +29,9 @@ export async function GET(
                },
             },
             address: true,
-            orderItems: {
+            OrderItem: {
                include: {
-                  product: {
+                  Product: {
                      select: {
                         id: true,
                         title: true,
@@ -142,9 +142,9 @@ export async function PATCH(
                },
             },
             address: true,
-            orderItems: {
+            OrderItem: {
                include: {
-                  product: {
+                  Product: {
                      select: {
                         id: true,
                         title: true,

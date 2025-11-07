@@ -39,7 +39,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                provider: true,
             },
          },
-         orderItems: { include: { product: true } },
+         OrderItem: { include: { Product: true } },
          refund: true,
       },
    })

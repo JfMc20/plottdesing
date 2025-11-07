@@ -23,9 +23,9 @@ const UserPage = async ({ params }: { params: { userId: string } }) => {
          payments: true,
          orders: {
             include: {
-               orderItems: {
+               OrderItem: {
                   include: {
-                     product: true,
+                     Product: true,
                   },
                },
             },

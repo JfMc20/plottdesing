@@ -12,7 +12,25 @@ export async function POST(req: Request) {
 
       const body = await req.json()
 
-      const { title, images, price, discount, stock, weight, width, height, length, categoryId, brandId, isFeatured, isAvailable } = body
+      const { 
+         title, 
+         description,
+         images, 
+         price, 
+         discount, 
+         stock, 
+         weight, 
+         width, 
+         height, 
+         length, 
+         categoryId, 
+         brandId, 
+         categoryItemId, 
+         isFeatured, 
+         isAvailable, 
+         isCustomizable,
+         isPrintOnDemand 
+      } = body
 
       if (!title) {
          return new NextResponse('Title is required', { status: 400 })
@@ -37,6 +55,7 @@ export async function POST(req: Request) {
       const product = await prisma.product.create({
          data: {
             title,
+            description: description || null,
             images,
             price,
             discount: discount || 0,
@@ -45,18 +64,17 @@ export async function POST(req: Request) {
             width: width || null,
             height: height || null,
             length: length || null,
-            brand: {
-               connect: {
-                  id: brandId,
-               },
-            },
+            categoryItemId: categoryItemId || null,
+            isCustomizable: isCustomizable ?? false,
+            isPrintOnDemand: isPrintOnDemand ?? false,
+            brandId,
+            isFeatured: isFeatured || false,
+            isAvailable: isAvailable || false,
             categories: {
                connect: {
                   id: categoryId,
                },
             },
-            isFeatured: isFeatured || false,
-            isAvailable: isAvailable || false,
          },
       })
 

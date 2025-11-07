@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 
 export type CartItemWithProduct = Prisma.CartItemGetPayload<{
    include: {
-      product: {
+      Product: {
          include: {
             brand: true
             categories: true
@@ -16,6 +16,7 @@ export type ProductWithIncludes = Prisma.ProductGetPayload<{
       brand: true
       categories: true
       orders: true
+      categoryItem: true
    }
 }>
 
@@ -24,9 +25,9 @@ export type UserWithIncludes = Prisma.UserGetPayload<{
       addresses: true
       orders: {
          include: {
-            orderItems: {
+            OrderItem: {
                include: {
-                  product: true
+                  Product: true
                }
             }
          }
@@ -50,7 +51,7 @@ export type OrderWithIncludes = Prisma.OrderGetPayload<{
             provider: true
          }
       }
-      orderItems: { include: { product: true } }
+      OrderItem: { include: { Product: true } }
       refund: true
    }
 }>

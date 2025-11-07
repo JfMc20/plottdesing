@@ -52,6 +52,12 @@ export default async function Product({
       include: {
          brand: true,
          categories: true,
+         categoryItem: {
+            include: {
+               ProductSize: { orderBy: { displayOrder: 'asc' } },
+               ProductZone: { orderBy: { displayOrder: 'asc' } },
+            }
+         },
       },
    })
 

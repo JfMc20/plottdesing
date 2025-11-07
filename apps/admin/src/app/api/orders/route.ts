@@ -36,9 +36,9 @@ export async function GET(req: Request) {
                },
             },
             address: true,
-            orderItems: {
+            OrderItem: {
                include: {
-                  product: {
+                  Product: {
                      select: {
                         id: true,
                         title: true,

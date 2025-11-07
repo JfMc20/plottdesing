@@ -15,11 +15,19 @@ export default async function ProductPage({
          categories: true,
          brand: true,
          orders: true,
+         categoryItem: true,
       },
    })
 
    const categories = await prisma.category.findMany()
    const brands = await prisma.brand.findMany()
+   const categoryItems = await prisma.categoryItem.findMany({
+      select: {
+         id: true,
+         name: true,
+         categoryId: true,
+      },
+   })
 
    return (
       <div className="flex-col">
@@ -27,6 +35,7 @@ export default async function ProductPage({
             <ProductForm
                categories={categories}
                brands={brands}
+               categoryItems={categoryItems}
                initialData={product}
             />
          </div>
