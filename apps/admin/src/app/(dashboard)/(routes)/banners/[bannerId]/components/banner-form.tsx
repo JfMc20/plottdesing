@@ -20,6 +20,13 @@ import {
    FormLabel,
    FormMessage,
 } from '@/components/ui/form'
+import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Heading } from '@/components/ui/heading'
 import { AlertModal } from '@/components/modals/alert-modal'
@@ -32,15 +39,17 @@ const ImageUpload = dynamic(() => import('@/components/ui/image-upload'), {
 const formSchema = z.object({
    label: z.string().min(1),
    image: z.string().min(1),
+   categoryId: z.string().optional(),
 })
 
 type BannerFormValues = z.infer<typeof formSchema>
 
 interface BannerFormProps {
    initialData: Banner | null
+   categories: { id: string; title: string }[]
 }
 
-export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
+export const BannerForm: React.FC<BannerFormProps> = ({ initialData, categories }) => {
    const params = useParams()
    const router = useRouter()
 
@@ -57,6 +66,7 @@ export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
       defaultValues: initialData || {
          label: '',
          image: '',
+         categoryId: '',
       },
    })
 
@@ -70,7 +80,7 @@ export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
                cache: 'no-store',
             })
          } else {
-            await fetch(`/banners`, {
+            await fetch(`/api/banners`, {
                method: 'POST',
                body: JSON.stringify(data),
                cache: 'no-store',
@@ -159,6 +169,36 @@ export const BannerForm: React.FC<BannerFormProps> = ({ initialData }) => {
                                  {...field}
                               />
                            </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                     )}
+                  />
+                  <FormField
+                     control={form.control}
+                     name="categoryId"
+                     render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Category (Optional)</FormLabel>
+                           <Select
+                              disabled={loading}
+                              onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)}
+                              value={field.value || 'none'}
+                              defaultValue={field.value || 'none'}
+                           >
+                              <FormControl>
+                                 <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                 </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                 <SelectItem value="none">None</SelectItem>
+                                 {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                       {category.title}
+                                    </SelectItem>
+                                 ))}
+                              </SelectContent>
+                           </Select>
                            <FormMessage />
                         </FormItem>
                      )}

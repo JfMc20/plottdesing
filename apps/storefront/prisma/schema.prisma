@@ -35,13 +35,16 @@ model Author {
 }
 
 model Banner {
-  id         String     @id
+  id         String    @id
   label      String
   image      String
-  createdAt  DateTime   @default(now())
+  categoryId String?
+  category   Category? @relation("BannerCategory", fields: [categoryId], references: [id])
+  createdAt  DateTime  @default(now())
   updatedAt  DateTime
-  isArchived Boolean    @default(false)
-  Category   Category[]
+  isArchived Boolean   @default(false)
+
+  @@index([categoryId])
 }
 
 model Blog {
@@ -64,7 +67,7 @@ model Brand {
   id          String    @id
   title       String    @unique
   description String?
-  logo        String?
+  color       String?   @default("#3B82F6")
   products    Product[]
 }
 
@@ -94,7 +97,7 @@ model Category {
   updatedAt     DateTime
   isArchived    Boolean        @default(false)
   categoryItems CategoryItem[]
-  banners       Banner[]
+  banners       Banner[]       @relation("BannerCategory")
   products      Product[]
 }
 
@@ -278,6 +281,7 @@ model Product {
   productReviews  ProductReview[]
   categories      Category[]
   wishlists       User[]          @relation("Wishlist")
+  customizationRequests CustomizationRequest[]
 
   @@index([brandId])
   @@index([categoryItemId])
@@ -390,6 +394,7 @@ model User {
   Payment                  Payment[]
   ProductReview            ProductReview[]
   Product                  Product[]       @relation("Wishlist")
+  CustomizationRequest     CustomizationRequest[]
 }
 
 enum OrderStatusEnum {
@@ -409,4 +414,23 @@ enum PaymentStatusEnum {
   Paid
   Failed
   Denied
+}
+
+model CustomizationRequest {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  zoneId       String
+  sizeId       String?
+  quantity     Int      @default(1)
+  designImages String[]
+  notes        String?
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([productId])
+  @@index([userId])
 }

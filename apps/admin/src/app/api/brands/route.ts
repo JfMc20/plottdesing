@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
       const body = await req.json()
 
-      const { title, description, logo } = body
+      const { title, description, color } = body
 
       if (!title) {
          return new NextResponse('Name is required', { status: 400 })
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
          data: {
             title,
             description,
-            logo,
+            color: color || '#3B82F6',
          },
       })
 

@@ -15,7 +15,7 @@ export type BannersColumn = {
    id: string
    label: string
    image: string
-   categoriesCount: number
+   categoryName: string
    createdAt: string
 }
 
@@ -138,9 +138,8 @@ export const BannersClient: React.FC<BannersClientProps> = ({
          header: 'Label',
       },
       {
-         accessorKey: 'categoriesCount',
-         header: 'Categories',
-         cell: ({ row }) => `${row.original.categoriesCount} categories`,
+         accessorKey: 'categoryName',
+         header: 'Category',
       },
       {
          accessorKey: 'createdAt',

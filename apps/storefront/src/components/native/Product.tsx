@@ -128,7 +128,15 @@ export const Product = ({ product }: { product: ProductWithIncludes }) => {
                      {product?.categories[0]?.title}
                   </Badge>
                   {product?.brand && (
-                     <Badge variant="secondary">{product.brand.title}</Badge>
+                     <Badge 
+                        variant="secondary"
+                        style={{ 
+                          backgroundColor: product.brand.color || '#3B82F6',
+                          color: '#ffffff'
+                        }}
+                     >
+                        {product.brand.title}
+                     </Badge>
                   )}
                </div>
 

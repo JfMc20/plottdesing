@@ -16,7 +16,7 @@ export default async function CategoryItemPage({
                     include: { printSizes: true },
                     orderBy: { displayOrder: 'asc' },
                  },
-                 attributes: true,
+                 ProductAttribute: true,
               },
            })
          : null

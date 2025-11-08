@@ -39,11 +39,11 @@ export const CategoryItemsClient: React.FC<CategoryItemsClientProps> = ({
    const formattedData: CategoryItemColumn[] = data.map((item) => ({
       id: item.id,
       name: item.name,
-      category: item.category.title,
+      category: item.Category.title,
       basePrice: item.basePrice,
-      sizesCount: item.sizes.length,
-      zonesCount: item.zones.length,
-      attributesCount: item.attributes.length,
+      sizesCount: item.ProductSize.length,
+      zonesCount: item.ProductZone.length,
+      attributesCount: item.ProductAttribute.length,
       createdAt: new Date(item.createdAt).toLocaleDateString(),
    }))
 

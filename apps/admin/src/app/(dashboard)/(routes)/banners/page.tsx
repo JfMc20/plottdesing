@@ -22,7 +22,7 @@ export default async function BannersPage({
          isArchived: showArchived,
       },
       include: {
-         categories: true,
+         category: true,
       },
       orderBy: {
          createdAt: 'desc',
@@ -33,7 +33,7 @@ export default async function BannersPage({
       id: item.id,
       label: item.label,
       image: item.image,
-      categoriesCount: item.categories.length,
+      categoryName: item.category?.title || 'None',
       createdAt: format(item.createdAt, 'MMMM do, yyyy'),
    }))
 

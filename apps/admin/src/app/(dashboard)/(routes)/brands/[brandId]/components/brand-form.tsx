@@ -25,7 +25,7 @@ import * as z from 'zod'
 const formSchema = z.object({
    title: z.string().min(2),
    description: z.string().min(1).optional(),
-   logo: z.string().url().optional(),
+   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color').optional(),
 })
 
 type BrandFormValues = z.infer<typeof formSchema>
@@ -51,7 +51,7 @@ export const BrandForm: React.FC<BrandFormProps> = ({ initialData }) => {
       defaultValues: initialData || {
          title: '',
          description: '',
-         logo: '',
+         color: '#3B82F6',
       },
    })
 
@@ -167,16 +167,26 @@ export const BrandForm: React.FC<BrandFormProps> = ({ initialData }) => {
                   />
                   <FormField
                      control={form.control}
-                     name="logo"
+                     name="color"
                      render={({ field }) => (
                         <FormItem>
-                           <FormLabel>Logo URL</FormLabel>
+                           <FormLabel>Brand Color</FormLabel>
                            <FormControl>
-                              <Input
-                                 disabled={loading}
-                                 placeholder="https://example.com/logo.png"
-                                 {...field}
-                              />
+                              <div className="flex gap-2 items-center">
+                                 <Input
+                                    type="color"
+                                    disabled={loading}
+                                    className="w-20 h-10 cursor-pointer"
+                                    {...field}
+                                 />
+                                 <Input
+                                    type="text"
+                                    disabled={loading}
+                                    placeholder="#3B82F6"
+                                    className="flex-1"
+                                    {...field}
+                                 />
+                              </div>
                            </FormControl>
                            <FormMessage />
                         </FormItem>

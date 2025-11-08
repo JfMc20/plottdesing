@@ -29,10 +29,10 @@ export default async function CategoriesPage({
          isArchived: showArchived,
       },
       include: {
-         category: true,
-         sizes: true,
-         zones: true,
-         attributes: true,
+         Category: true,
+         ProductSize: true,
+         ProductZone: true,
+         ProductAttribute: true,
       },
       orderBy: { createdAt: 'desc' },
    })

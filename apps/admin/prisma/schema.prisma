@@ -35,13 +35,16 @@ model Author {
 }
 
 model Banner {
-  id         String     @id
+  id         String    @id
   label      String
   image      String
-  createdAt  DateTime   @default(now())
+  categoryId String?
+  category   Category? @relation("BannerCategory", fields: [categoryId], references: [id])
+  createdAt  DateTime  @default(now())
   updatedAt  DateTime
-  isArchived Boolean    @default(false)
-  Category   Category[]
+  isArchived Boolean   @default(false)
+
+  @@index([categoryId])
 }
 
 model Blog {
@@ -64,7 +67,7 @@ model Brand {
   id          String    @id
   title       String    @unique
   description String?
-  logo        String?
+  color       String?   @default("#3B82F6")
   products    Product[]
 }
 
@@ -94,7 +97,7 @@ model Category {
   updatedAt     DateTime
   isArchived    Boolean        @default(false)
   categoryItems CategoryItem[]
-  banners       Banner[]
+  banners       Banner[]       @relation("BannerCategory")
   products      Product[]
 }
 

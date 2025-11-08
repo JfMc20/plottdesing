@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 import prisma from '@/lib/prisma'
 
 export async function POST(req: Request) {
@@ -30,11 +31,18 @@ export async function POST(req: Request) {
       }
 
       // Limpiar y convertir tipos
-      const cleanSizes = sizes?.map(({ id, categoryItemId, createdAt, updatedAt, ...rest }: any) => rest) || []
-      const cleanZones = zones?.map(({ id, categoryItemId, createdAt, updatedAt, printSizes, ...rest }: any) => ({
+      const cleanSizes = sizes?.map(({ id, categoryItemId, createdAt, updatedAt, ...rest }: any) => ({
+         id: nanoid(),
          ...rest,
-         printSizes: printSizes ? {
+         updatedAt: new Date(),
+      })) || []
+      const cleanZones = zones?.map(({ id, categoryItemId, createdAt, updatedAt, printSizes, ...rest }: any) => ({
+         id: nanoid(),
+         ...rest,
+         updatedAt: new Date(),
+         ProductPrintSize: printSizes ? {
             create: printSizes.map(({ id, productZoneId, createdAt, updatedAt, ...ps }: any) => ({
+               id: nanoid(),
                name: ps.name || '',
                width: parseInt(ps.width) || 0,
                height: parseInt(ps.height) || 0,
@@ -42,26 +50,33 @@ export async function POST(req: Request) {
                area: parseFloat(ps.area) || 0,
                costPerMeter: ps.costPerMeter ? parseFloat(ps.costPerMeter) : 0,
                printingCost: ps.printingCost ? parseFloat(ps.printingCost) : 0,
+               updatedAt: new Date(),
             }))
          } : undefined
       })) || []
-      const cleanAttributes = attributes?.map(({ id, categoryItemId, createdAt, updatedAt, ...rest }: any) => rest) || []
+      const cleanAttributes = attributes?.map(({ id, categoryItemId, createdAt, updatedAt, ...rest }: any) => ({
+         id: nanoid(),
+         ...rest,
+         updatedAt: new Date(),
+      })) || []
 
       const categoryItem = await prisma.categoryItem.create({
          data: {
+            id: nanoid(),
             categoryId,
             name,
             description: description || null,
             skuPattern: skuPattern || null,
             basePrice: basePrice ? parseFloat(basePrice) : null,
-            sizes: cleanSizes.length > 0 ? { create: cleanSizes } : undefined,
-            zones: cleanZones.length > 0 ? { create: cleanZones } : undefined,
-            attributes: cleanAttributes.length > 0 ? { create: cleanAttributes } : undefined,
+            updatedAt: new Date(),
+            ProductSize: cleanSizes.length > 0 ? { create: cleanSizes } : undefined,
+            ProductZone: cleanZones.length > 0 ? { create: cleanZones } : undefined,
+            ProductAttribute: cleanAttributes.length > 0 ? { create: cleanAttributes } : undefined,
          },
          include: {
-            sizes: true,
-            zones: { include: { printSizes: true } },
-            attributes: true,
+            ProductSize: true,
+            ProductZone: { include: { ProductPrintSize: true } },
+            ProductAttribute: true,
          },
       })
 
@@ -83,13 +98,13 @@ export async function GET(req: Request) {
       const categoryItems = await prisma.categoryItem.findMany({
          where: categoryId ? { categoryId } : undefined,
          include: {
-            category: true,
-            sizes: { orderBy: { displayOrder: 'asc' } },
-            zones: {
-               include: { printSizes: true },
+            Category: true,
+            ProductSize: { orderBy: { displayOrder: 'asc' } },
+            ProductZone: {
+               include: { ProductPrintSize: true },
                orderBy: { displayOrder: 'asc' },
             },
-            attributes: true,
+            ProductAttribute: true,
          },
       })
 

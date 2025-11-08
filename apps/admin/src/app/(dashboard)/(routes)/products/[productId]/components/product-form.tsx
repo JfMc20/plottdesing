@@ -35,7 +35,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Category } from '@prisma/client'
 import { Archive, Trash } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import * as z from 'zod'
@@ -57,6 +57,15 @@ const formSchema = z.object({
    productType: z.enum(['normal', 'customizable', 'print-on-demand']).default('normal'),
    isFeatured: z.boolean().default(false).optional(),
    isAvailable: z.boolean().default(false).optional(),
+}).refine((data) => {
+   // Require categoryItemId for customizable and print-on-demand products
+   if ((data.productType === 'customizable' || data.productType === 'print-on-demand') && !data.categoryItemId) {
+      return false
+   }
+   return true
+}, {
+   message: "Category Item is required for Customizable and Print on Demand products",
+   path: ["categoryItemId"]
 })
 
 type ProductFormValues = z.infer<typeof formSchema>
@@ -83,6 +92,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
    const [selectedCategoryId, setSelectedCategoryId] = useState(
       initialData?.categories?.[0]?.id || ''
    )
+   const [selectedCategoryItemId, setSelectedCategoryItemId] = useState(
+      initialData?.categoryItemId || ''
+   )
+   const [categoryItemStock, setCategoryItemStock] = useState<number | null>(null)
 
    // Filter category items based on selected category
    const filteredCategoryItems = categoryItems.filter(
@@ -136,6 +149,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       resolver: zodResolver(formSchema),
       defaultValues,
    })
+
+   // Fetch category item stock when selected
+   useEffect(() => {
+      const fetchCategoryItemStock = async () => {
+         if (!selectedCategoryItemId) {
+            setCategoryItemStock(null)
+            return
+         }
+
+         try {
+            const res = await fetch(`/api/category-items/${selectedCategoryItemId}`)
+            const data = await res.json()
+            
+            // Calculate total stock from all sizes
+            const totalStock = data.ProductSize?.reduce((sum: number, size: any) => {
+               return sum + (size.stock || 0)
+            }, 0) || 0
+            
+            setCategoryItemStock(totalStock)
+         } catch (error) {
+            console.error('Error fetching category item stock:', error)
+            setCategoryItemStock(null)
+         }
+      }
+
+      fetchCategoryItemStock()
+   }, [selectedCategoryItemId])
+
+   const productType = form.watch('productType')
+   const isCustomizableOrPOD = productType === 'customizable' || productType === 'print-on-demand'
 
    const onSubmit = async (data: ProductFormValues) => {
       try {
@@ -274,102 +317,333 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                onSubmit={form.handleSubmit(onSubmit)}
                className="space-y-8 w-full"
             >
-               <div className="md:grid md:grid-cols-3 gap-8">
-                  <FormField
-                     control={form.control}
-                     name="title"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>Name</FormLabel>
-                           <FormControl>
-                              <Input
+               {/* SECTION 1: BASIC INFO */}
+               <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Basic Information</h3>
+                  <div className="md:grid md:grid-cols-3 gap-8">
+                     <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                           <FormItem>
+                              <FormLabel>Name</FormLabel>
+                              <FormControl>
+                                 <Input
+                                    disabled={loading}
+                                    placeholder="Product title"
+                                    {...field}
+                                 />
+                              </FormControl>
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                     <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                           <FormItem className="md:col-span-2">
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                 <Textarea
+                                    disabled={loading}
+                                    placeholder="Product description"
+                                    rows={3}
+                                    {...field}
+                                 />
+                              </FormControl>
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                     <FormField
+                        control={form.control}
+                        name="brandId"
+                        render={({ field }) => (
+                           <FormItem>
+                              <FormLabel>Brand</FormLabel>
+                              <Select
                                  disabled={loading}
-                                 placeholder="Product title"
-                                 {...field}
-                              />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="description"
-                     render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                           <FormLabel>Description</FormLabel>
-                           <FormControl>
-                              <Textarea
+                                 onValueChange={field.onChange}
+                                 value={field.value}
+                                 defaultValue={field.value}
+                              >
+                                 <FormControl>
+                                    <SelectTrigger>
+                                       <SelectValue
+                                          defaultValue={field.value}
+                                          placeholder="Select a brand"
+                                       />
+                                    </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                    {brands.map((brand) => (
+                                       <SelectItem
+                                          key={brand.id}
+                                          value={brand.id}
+                                       >
+                                          {brand.title}
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                     <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                           <FormItem className="md:col-span-2">
+                              <FormLabel>Category</FormLabel>
+                              <Select
                                  disabled={loading}
-                                 placeholder="Product description"
-                                 rows={3}
-                                 {...field}
-                              />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
+                                 onValueChange={(value) => {
+                                    field.onChange(value)
+                                    setSelectedCategoryId(value)
+                                    form.setValue('categoryItemId', '')
+                                 }}
+                                 value={field.value}
+                                 defaultValue={field.value}
+                              >
+                                 <FormControl>
+                                    <SelectTrigger>
+                                       <SelectValue
+                                          defaultValue={field.value}
+                                          placeholder="Select a category"
+                                       />
+                                    </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                    {categories.map((category) => (
+                                       <SelectItem
+                                          key={category.id}
+                                          value={category.id}
+                                       >
+                                          {category.title}
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                  </div>
+               </div>
+
+               <Separator />
+
+               {/* SECTION 2: PRODUCT TYPE */}
+               <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Product Type</h3>
+                  <div className="md:grid md:grid-cols-3 gap-8">
+                     <FormField
+                        control={form.control}
+                        name="categoryItemId"
+                        render={({ field }) => (
+                           <FormItem>
+                              <FormLabel>
+                                 Category Item (Optional)
+                                 <HelpTooltip content="Select if this is a customizable product. Leave empty for normal or print-on-demand products." />
+                              </FormLabel>
+                              <Select
+                                 disabled={loading || !selectedCategoryId}
+                                 onValueChange={(value) => {
+                                    field.onChange(value === 'none' ? '' : value)
+                                    setSelectedCategoryItemId(value === 'none' ? '' : value)
+                                    // Auto-set to customizable if category item selected
+                                    if (value && value !== 'none') {
+                                       form.setValue('productType', 'customizable')
+                                    }
+                                 }}
+                                 value={field.value || 'none'}
+                                 defaultValue={field.value || 'none'}
+                              >
+                                 <FormControl>
+                                    <SelectTrigger>
+                                       <SelectValue
+                                          defaultValue={field.value}
+                                          placeholder={selectedCategoryId ? "Select a category item" : "Select category first"}
+                                       />
+                                    </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                    <SelectItem value="none">None (Normal/POD Product)</SelectItem>
+                                    {filteredCategoryItems.map((item) => (
+                                       <SelectItem
+                                          key={item.id}
+                                          value={item.id}
+                                       >
+                                          {item.name}
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                     <FormField
+                        control={form.control}
+                        name="productType"
+                        render={({ field }) => (
+                           <FormItem className="md:col-span-2">
+                              <FormLabel>
+                                 Type
+                                 <HelpTooltip content="Customizable: Uses Category Item (price calculated). Normal/POD: Set your own price." />
+                              </FormLabel>
+                              <Select
+                                 disabled={loading || !!selectedCategoryItemId}
+                                 onValueChange={field.onChange}
+                                 value={selectedCategoryItemId ? 'customizable' : field.value}
+                                 defaultValue={field.value}
+                              >
+                                 <FormControl>
+                                    <SelectTrigger>
+                                       <SelectValue
+                                          defaultValue={field.value}
+                                          placeholder="Select product type"
+                                       />
+                                    </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                    <SelectItem value="normal">
+                                       Normal Product
+                                    </SelectItem>
+                                    <SelectItem value="customizable" disabled={!selectedCategoryItemId}>
+                                       Customizable Product {!selectedCategoryItemId && '(Select Category Item first)'}
+                                    </SelectItem>
+                                    <SelectItem value="print-on-demand">
+                                       Print on Demand
+                                    </SelectItem>
+                                 </SelectContent>
+                              </Select>
+                              {selectedCategoryItemId && (
+                                 <p className="text-xs text-muted-foreground">
+                                    Automatically set to Customizable when Category Item is selected.
+                                 </p>
+                              )}
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                  </div>
+               </div>
+
+               <Separator />
+
+               {/* SECTION 3: PRICING & STOCK */}
+               <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Pricing & Stock</h3>
+                  <div className="md:grid md:grid-cols-3 gap-8">
+                     {/* Only show Price for Normal and Print-on-Demand */}
+                     {!selectedCategoryItemId && (
+                        <>
+                           <FormField
+                              control={form.control}
+                              name="price"
+                              render={({ field }) => (
+                                 <FormItem>
+                                    <FormLabel>Price</FormLabel>
+                                    <FormControl>
+                                       <Input
+                                          type="number"
+                                          disabled={loading}
+                                          placeholder="9.99"
+                                          {...field}
+                                       />
+                                    </FormControl>
+                                    <FormMessage />
+                                 </FormItem>
+                              )}
+                           />
+                           <FormField
+                              control={form.control}
+                              name="discount"
+                              render={({ field }) => (
+                                 <FormItem>
+                                    <FormLabel>
+                                       Discount
+                                       <HelpTooltip content="Descuento en el precio del producto. Se resta del precio base." />
+                                    </FormLabel>
+                                    <FormControl>
+                                       <Input
+                                          type="number"
+                                          disabled={loading}
+                                          placeholder="0"
+                                          {...field}
+                                       />
+                                    </FormControl>
+                                    <FormMessage />
+                                 </FormItem>
+                              )}
+                           />
+                        </>
                      )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="price"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>Price</FormLabel>
-                           <FormControl>
-                              <Input
-                                 type="number"
-                                 disabled={loading}
-                                 placeholder="9.99"
-                                 {...field}
-                              />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
+                     {selectedCategoryItemId && (
+                        <div className="md:col-span-2 p-4 bg-muted rounded-md">
+                           <p className="text-sm font-medium mb-2">Customizable Product Pricing</p>
+                           <p className="text-xs text-muted-foreground">
+                              Price is calculated dynamically based on Category Item base price + printing costs selected by customer.
+                           </p>
+                        </div>
                      )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="discount"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>
-                              Discount
-                              <HelpTooltip content="Descuento en el precio del producto. Se resta del precio base." />
-                           </FormLabel>
-                           <FormControl>
-                              <Input
-                                 type="number"
-                                 disabled={loading}
-                                 placeholder="9.99"
-                                 {...field}
-                              />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="stock"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>
-                              Stock
-                              <HelpTooltip content="Cantidad disponible del producto en inventario." />
-                           </FormLabel>
-                           <FormControl>
-                              <Input
-                                 type="number"
-                                 disabled={loading}
-                                 placeholder="10"
-                                 {...field}
-                              />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
+                     <FormField
+                        control={form.control}
+                        name="stock"
+                        render={({ field }) => (
+                           <FormItem>
+                              <FormLabel>
+                                 Stock
+                                 <HelpTooltip content={
+                                    selectedCategoryItemId
+                                       ? "Stock is managed in Category Item sizes. This shows the total."
+                                       : productType === 'print-on-demand'
+                                          ? "Print on Demand products have unlimited stock."
+                                          : "Cantidad disponible del producto en inventario."
+                                 } />
+                              </FormLabel>
+                              <FormControl>
+                                 <Input
+                                    type="number"
+                                    disabled={loading || !!selectedCategoryItemId || productType === 'print-on-demand'}
+                                    placeholder={productType === 'print-on-demand' ? 'Unlimited' : '10'}
+                                    value={
+                                       productType === 'print-on-demand' 
+                                          ? '∞' 
+                                          : selectedCategoryItemId && categoryItemStock !== null
+                                             ? categoryItemStock
+                                             : field.value
+                                    }
+                                    onChange={field.onChange}
+                                    className={selectedCategoryItemId || productType === 'print-on-demand' ? 'bg-muted' : ''}
+                                 />
+                              </FormControl>
+                              {selectedCategoryItemId && categoryItemStock !== null && (
+                                 <p className="text-xs text-muted-foreground">
+                                    Total: {categoryItemStock} units from Category Item sizes.
+                                 </p>
+                              )}
+                              {productType === 'print-on-demand' && (
+                                 <p className="text-xs text-muted-foreground">
+                                    Produced when ordered.
+                                 </p>
+                              )}
+                              <FormMessage />
+                           </FormItem>
+                        )}
+                     />
+                  </div>
+               </div>
+
+               <Separator />
+
+               {/* SECTION 4: DIMENSIONS */}
+               <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Dimensions & Shipping</h3>
+                  <div className="md:grid md:grid-cols-4 gap-8">
                   <FormField
                      control={form.control}
                      name="weight"
@@ -382,7 +656,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                            <FormControl>
                               <Input
                                  type="number"
-                                 step="0.01"
+                                 step="0.1"
                                  disabled={loading}
                                  placeholder="0.5"
                                  {...field}
@@ -458,200 +732,61 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         </FormItem>
                      )}
                   />
-                  <FormField
-                     control={form.control}
-                     name="categoryId"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>Category</FormLabel>
-                           <Select
-                              disabled={loading}
-                              onValueChange={(value) => {
-                                 field.onChange(value)
-                                 setSelectedCategoryId(value)
-                                 // Reset categoryItemId when category changes
-                                 form.setValue('categoryItemId', '')
-                              }}
-                              value={field.value}
-                              defaultValue={field.value}
-                           >
-                              <FormControl>
-                                 <SelectTrigger>
-                                    <SelectValue
-                                       defaultValue={field.value}
-                                       placeholder="Select a category"
-                                    />
-                                 </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                 {categories.map((category) => (
-                                    <SelectItem
-                                       key={category.id}
-                                       value={category.id}
-                                    >
-                                       {category.title}
-                                    </SelectItem>
-                                 ))}
-                              </SelectContent>
-                           </Select>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="categoryItemId"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>
-                              Category Item
-                              <HelpTooltip content="Tipo específico de producto dentro de la categoría seleccionada." />
-                           </FormLabel>
-                           <Select
-                              disabled={loading || !selectedCategoryId}
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              defaultValue={field.value}
-                           >
-                              <FormControl>
-                                 <SelectTrigger>
-                                    <SelectValue
-                                       defaultValue={field.value}
-                                       placeholder={selectedCategoryId ? "Select a category item" : "Select category first"}
-                                    />
-                                 </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                 {filteredCategoryItems.map((item) => (
-                                    <SelectItem
-                                       key={item.id}
-                                       value={item.id}
-                                    >
-                                       {item.name}
-                                    </SelectItem>
-                                 ))}
-                              </SelectContent>
-                           </Select>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="brandId"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>Brand</FormLabel>
-                           <Select
-                              disabled={loading}
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              defaultValue={field.value}
-                           >
-                              <FormControl>
-                                 <SelectTrigger>
-                                    <SelectValue
-                                       defaultValue={field.value}
-                                       placeholder="Select a brand"
-                                    />
-                                 </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                 {brands.map((brand) => (
-                                    <SelectItem
-                                       key={brand.id}
-                                       value={brand.id}
-                                    >
-                                       {brand.title}
-                                    </SelectItem>
-                                 ))}
-                              </SelectContent>
-                           </Select>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="productType"
-                     render={({ field }) => (
-                        <FormItem>
-                           <FormLabel>
-                              Product Type
-                              <HelpTooltip content="Normal: Regular product with stock. Customizable: Customer can personalize. Print on Demand: Unlimited stock." />
-                           </FormLabel>
-                           <Select
-                              disabled={loading}
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              defaultValue={field.value}
-                           >
-                              <FormControl>
-                                 <SelectTrigger>
-                                    <SelectValue
-                                       defaultValue={field.value}
-                                       placeholder="Select product type"
-                                    />
-                                 </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                 <SelectItem value="normal">
-                                    Normal Product
-                                 </SelectItem>
-                                 <SelectItem value="customizable">
-                                    Customizable Product
-                                 </SelectItem>
-                                 <SelectItem value="print-on-demand">
-                                    Print on Demand
-                                 </SelectItem>
-                              </SelectContent>
-                           </Select>
-                           <FormMessage />
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="isFeatured"
-                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                           <FormControl>
-                              <Checkbox
-                                 checked={field.value}
-                                 onCheckedChange={field.onChange}
-                              />
-                           </FormControl>
-                           <div className="space-y-1 leading-none">
-                              <FormLabel>Featured</FormLabel>
-                              <FormDescription>
-                                 This product will appear on the home page
-                              </FormDescription>
-                           </div>
-                        </FormItem>
-                     )}
-                  />
-                  <FormField
-                     control={form.control}
-                     name="isAvailable"
-                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                           <FormControl>
-                              <Checkbox
-                                 checked={field.value}
-                                 onCheckedChange={field.onChange}
-                              />
-                           </FormControl>
-                           <div className="space-y-1 leading-none">
-                              <FormLabel>Available</FormLabel>
-                              <FormDescription>
-                                 This product will appear in the store.
-                              </FormDescription>
-                           </div>
-                        </FormItem>
-                     )}
-                  />
                </div>
+               </div>
+
                <Separator />
+
+               {/* SECTION 5: VISIBILITY */}
+               <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Visibility</h3>
+                  <div className="md:grid md:grid-cols-2 gap-8">
+                     <FormField
+                        control={form.control}
+                        name="isFeatured"
+                        render={({ field }) => (
+                           <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                 <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                 />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                 <FormLabel>Featured</FormLabel>
+                                 <FormDescription>
+                                    This product will appear on the home page
+                                 </FormDescription>
+                              </div>
+                           </FormItem>
+                        )}
+                     />
+                     <FormField
+                        control={form.control}
+                        name="isAvailable"
+                        render={({ field }) => (
+                           <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                 <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                 />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                 <FormLabel>Available</FormLabel>
+                                 <FormDescription>
+                                    This product will appear in the store.
+                                 </FormDescription>
+                              </div>
+                           </FormItem>
+                        )}
+                     />
+                  </div>
+               </div>
+
+               <Separator />
+
+               {/* SECTION 6: IMAGES */}
                <FormField
                   control={form.control}
                   name="images"

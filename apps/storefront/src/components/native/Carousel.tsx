@@ -5,9 +5,17 @@ import Autoplay from 'embla-carousel-autoplay'
 import useEmblaCarousel from 'embla-carousel-react'
 import { ImageIcon } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export default function Carousel({ images }: { images: string[] }) {
+type Banner = {
+   id: string
+   image: string
+   categoryId: string | null
+}
+
+export default function Carousel({ banners }: { banners: Banner[] }) {
+   const router = useRouter()
    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay()])
    const [selectedIndex, setSelectedIndex] = useState(0)
    const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
@@ -29,8 +37,14 @@ export default function Carousel({ images }: { images: string[] }) {
       setImageErrors((prev) => new Set(prev).add(index))
    }
 
-   // If no images or all failed, show placeholder
-   if (!images || images.length === 0 || imageErrors.size === images.length) {
+   const handleBannerClick = (banner: Banner) => {
+      if (banner.categoryId) {
+         router.push(`/category/${banner.categoryId}`)
+      }
+   }
+
+   // If no banners or all failed, show placeholder
+   if (!banners || banners.length === 0 || imageErrors.size === banners.length) {
       return (
          <div className="flex h-96 items-center justify-center rounded-lg bg-muted">
             <div className="text-center text-muted-foreground">
@@ -45,8 +59,15 @@ export default function Carousel({ images }: { images: string[] }) {
       <>
          <div className="overflow-hidden rounded-lg" ref={emblaRef}>
             <div className="flex">
-               {images.map((src, i) => (
-                  <div className="relative h-96 flex-[0_0_100%]" key={i}>
+               {banners.map((banner, i) => (
+                  <div 
+                     className={cn(
+                        "relative h-96 flex-[0_0_100%]",
+                        banner.categoryId && "cursor-pointer"
+                     )}
+                     key={banner.id}
+                     onClick={() => handleBannerClick(banner)}
+                  >
                      {imageErrors.has(i) ? (
                         <div className="flex h-full items-center justify-center bg-muted">
                            <div className="text-center text-muted-foreground">
@@ -56,7 +77,7 @@ export default function Carousel({ images }: { images: string[] }) {
                         </div>
                      ) : (
                         <Image
-                           src={src}
+                           src={banner.image}
                            fill
                            className="object-cover"
                            alt=""
@@ -70,7 +91,7 @@ export default function Carousel({ images }: { images: string[] }) {
                ))}
             </div>
          </div>
-         <Dots itemsLength={images.length} selectedIndex={selectedIndex} />
+         <Dots itemsLength={banners.length} selectedIndex={selectedIndex} />
       </>
    )
 }

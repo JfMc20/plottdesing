@@ -9,13 +9,13 @@ export async function GET(
       const categoryItem = await prisma.categoryItem.findUnique({
          where: { id: params.id },
          include: {
-            category: true,
+            Category: true,
             sizes: { orderBy: { displayOrder: 'asc' } },
             zones: {
                include: { printSizes: true },
                orderBy: { displayOrder: 'asc' },
             },
-            attributes: true,
+            ProductAttribute: true,
          },
       })
 
@@ -119,9 +119,9 @@ export async function PATCH(
             attributes: cleanAttributes ? { create: cleanAttributes } : undefined,
          },
          include: {
-            sizes: true,
+            ProductSize: true,
             zones: { include: { printSizes: true } },
-            attributes: true,
+            ProductAttribute: true,
          },
       })
 
@@ -143,9 +143,33 @@ export async function DELETE(
          return new NextResponse('Unauthorized', { status: 401 })
       }
 
-      await prisma.categoryItem.delete({
-         where: { id: params.id },
-      })
+      // Delete related records first to avoid foreign key constraint errors
+      await prisma.$transaction([
+         // Delete ProductPrintSize first (related to ProductZone)
+         prisma.productPrintSize.deleteMany({
+            where: {
+               ProductZone: {
+                  categoryItemId: params.id
+               }
+            }
+         }),
+         // Delete ProductZone
+         prisma.productZone.deleteMany({
+            where: { categoryItemId: params.id }
+         }),
+         // Delete ProductSize
+         prisma.productSize.deleteMany({
+            where: { categoryItemId: params.id }
+         }),
+         // Delete ProductAttribute
+         prisma.productAttribute.deleteMany({
+            where: { categoryItemId: params.id }
+         }),
+         // Finally delete CategoryItem
+         prisma.categoryItem.delete({
+            where: { id: params.id }
+         })
+      ])
 
       return NextResponse.json({ success: true })
    } catch (error) {

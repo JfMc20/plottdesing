@@ -1,13 +1,17 @@
 import prisma from '@/lib/prisma'
 import { CategoryItemsClient } from './components/client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function CategoryItemsPage() {
    const categoryItems = await prisma.categoryItem.findMany({
       include: {
-         category: true,
-         sizes: true,
-         zones: true,
-         attributes: true,
+         Category: true,
+         ProductSize: true,
+         ProductZone: true,
+         ProductAttribute: true,
       },
       orderBy: { createdAt: 'desc' },
    })

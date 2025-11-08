@@ -18,6 +18,7 @@ export default async function BrandsPage() {
       id: brand.id,
       title: brand.title,
       products: brand.products.length,
+      color: brand.color || '#3B82F6',
    }))
 
    return (

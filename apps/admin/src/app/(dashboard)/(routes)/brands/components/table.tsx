@@ -14,6 +14,7 @@ export type BrandColumn = {
    id: string
    title: string
    products: number
+   color: string
 }
 
 interface BrandsClientProps {
@@ -89,6 +90,21 @@ export const BrandsClient: React.FC<BrandsClientProps> = ({ data }) => {
       {
          accessorKey: 'products',
          header: 'Products #',
+      },
+      {
+         accessorKey: 'color',
+         header: 'Brand Color',
+         cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+               <div 
+                  className="w-6 h-6 rounded border border-gray-300"
+                  style={{ backgroundColor: row.original.color }}
+               />
+               <span className="text-xs text-muted-foreground font-mono">
+                  {row.original.color}
+               </span>
+            </div>
+         ),
       },
       {
          id: 'actions',

@@ -4,12 +4,20 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
    try {
       const body = await req.json()
-      const { productId, zoneId, sizeId, designImages, notes } = body
+      const { productId, zoneId, sizeId, quantity, designImages, notes } = body
 
       // Validate required fields
-      if (!productId || !zoneId || !sizeId || !designImages || !Array.isArray(designImages) || designImages.length === 0) {
+      if (!productId || !zoneId || !designImages || !Array.isArray(designImages) || designImages.length === 0) {
          return NextResponse.json(
             { error: 'Missing required fields' },
+            { status: 400 }
+         )
+      }
+
+      // Validate quantity
+      if (!quantity || quantity < 1) {
+         return NextResponse.json(
+            { error: 'Invalid quantity' },
             { status: 400 }
          )
       }
@@ -32,48 +40,112 @@ export async function POST(req: Request) {
          }
       }
 
-      // TODO: Get user from session
-      // For now, we'll create a notification for admin
-      
-      const customizationRequest = {
-         productId,
-         zoneId,
-         sizeId,
-         designImages,
-         notes: notes || '',
-         createdAt: new Date(),
-      }
-
-      // Fetch related data for notification
+      // Get product with category item and sizes
       const product = await prisma.product.findUnique({
          where: { id: productId },
-         include: { brand: true, categories: true },
+         include: {
+            brand: true,
+            categories: true,
+            categoryItem: {
+               include: {
+                  ProductSize: true
+               }
+            }
+         },
       })
 
+      if (!product) {
+         return NextResponse.json(
+            { error: 'Product not found' },
+            { status: 404 }
+         )
+      }
+
+      // Verify stock availability
+      if (!product.isPrintOnDemand) {
+         const hasSizes = product.categoryItem?.ProductSize && product.categoryItem.ProductSize.length > 0
+         
+         if (hasSizes) {
+            // Verify stock by size
+            if (!sizeId) {
+               return NextResponse.json(
+                  { error: 'Size is required for this product' },
+                  { status: 400 }
+               )
+            }
+
+            const size = product.categoryItem.ProductSize.find(s => s.id === sizeId)
+            if (!size || size.stock < quantity) {
+               return NextResponse.json(
+                  { error: `Only ${size?.stock || 0} units available in this size` },
+                  { status: 400 }
+               )
+            }
+
+            // Reduce stock for this size
+            await prisma.productSize.update({
+               where: { id: sizeId },
+               data: { stock: { decrement: quantity } }
+            })
+         } else {
+            // Verify general stock
+            if (product.stock < quantity) {
+               return NextResponse.json(
+                  { error: `Only ${product.stock} units available` },
+                  { status: 400 }
+               )
+            }
+
+            // Reduce general stock
+            await prisma.product.update({
+               where: { id: productId },
+               data: { stock: { decrement: quantity } }
+            })
+         }
+      }
+
+      // Create customization request in database
+      const customizationRequest = await prisma.customizationRequest.create({
+         data: {
+            productId,
+            zoneId,
+            sizeId: sizeId || null,
+            quantity,
+            designImages,
+            notes: notes || null,
+            status: 'pending',
+         },
+         include: {
+            product: {
+               include: {
+                  brand: true,
+                  categories: true
+               }
+            }
+         }
+      })
+
+      // Get zone info for notification
       const zone = await prisma.productZone.findUnique({
          where: { id: zoneId },
       })
 
-      const size = await prisma.productSize.findUnique({
+      const size = sizeId ? await prisma.productSize.findUnique({
          where: { id: sizeId },
+      }) : null
+
+      console.log('✅ Customization Request Created:', {
+         id: customizationRequest.id,
+         product: product.title,
+         zone: zone?.name,
+         size: size?.name,
+         quantity,
+         images: designImages.length
       })
-
-      // Create notification content
-      const notificationContent = `New customization request:
-Product: ${product?.title}
-Zone: ${zone?.name}
-Size: ${size?.name}
-Design Images: ${designImages.length} image(s)
-${designImages.map((url, i) => `Image ${i + 1}: ${url}`).join('\n')}
-${notes ? `Notes: ${notes}` : ''}`
-
-      // TODO: Send email to admin or create proper notification
-      console.log('Customization Request:', customizationRequest)
-      console.log('Notification:', notificationContent)
 
       return NextResponse.json({
          success: true,
-         message: 'Customization request received',
+         message: 'Customization request received successfully',
          data: customizationRequest,
       })
    } catch (error) {

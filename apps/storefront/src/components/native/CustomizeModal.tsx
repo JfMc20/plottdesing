@@ -12,7 +12,7 @@ import {
    SelectTrigger,
    SelectValue,
 } from '@/components/ui/select'
-import { X, Upload, Loader2, Trash2 } from 'lucide-react'
+import { X, Upload, Loader2, Trash2, Package } from 'lucide-react'
 import Image from 'next/image'
 import { ProductWithIncludes } from '@/types/prisma'
 
@@ -25,8 +25,15 @@ interface CustomizeModalProps {
 interface CategoryItemData {
    id: string
    name: string
-   sizes: { id: string; name: string; code: string }[]
-   zones: { id: string; name: string; code: string }[]
+   ProductSize: { id: string; name: string; code: string }[]
+   ProductZone: { id: string; name: string; code: string }[]
+}
+
+interface StockInfo {
+   available: boolean
+   stock: number
+   unlimited: boolean
+   message?: string
 }
 
 const MAX_IMAGES = 3
@@ -36,6 +43,9 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
    const [categoryItem, setCategoryItem] = useState<CategoryItemData | null>(null)
    const [selectedZone, setSelectedZone] = useState('')
    const [selectedSize, setSelectedSize] = useState('')
+   const [quantity, setQuantity] = useState(1)
+   const [stockInfo, setStockInfo] = useState<StockInfo | null>(null)
+   const [checkingStock, setCheckingStock] = useState(false)
    const [uploadedImages, setUploadedImages] = useState<string[]>([])
    const [notes, setNotes] = useState('')
    const [uploading, setUploading] = useState(false)
@@ -46,6 +56,13 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
       }
    }, [open, product.categoryItemId])
 
+   // Verificar stock cuando cambia la talla o se abre el modal
+   useEffect(() => {
+      if (open) {
+         checkStock()
+      }
+   }, [open, selectedSize])
+
    const fetchCategoryItem = async () => {
       try {
          const res = await fetch(`/api/category-items/${product.categoryItemId}`)
@@ -53,6 +70,40 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
          setCategoryItem(data)
       } catch (error) {
          console.error('Error fetching category item:', error)
+      }
+   }
+
+   const checkStock = async () => {
+      const hasSizes = categoryItem?.ProductSize && categoryItem.ProductSize.length > 0
+      
+      // Si tiene tallas pero no se ha seleccionado, no verificar aún
+      if (hasSizes && !selectedSize) {
+         setStockInfo(null)
+         return
+      }
+
+      setCheckingStock(true)
+      try {
+         const res = await fetch('/api/products/check-stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+               productId: product.id,
+               sizeId: selectedSize || undefined
+            })
+         })
+         const data = await res.json()
+         setStockInfo(data)
+         
+         // Ajustar cantidad si excede el stock
+         if (!data.unlimited && quantity > data.stock) {
+            setQuantity(data.stock > 0 ? data.stock : 1)
+         }
+      } catch (error) {
+         console.error('Error checking stock:', error)
+         setStockInfo({ available: false, stock: 0, unlimited: false })
+      } finally {
+         setCheckingStock(false)
       }
    }
 
@@ -96,8 +147,26 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
    }
 
    const handleSubmit = async () => {
-      if (!selectedZone || !selectedSize || uploadedImages.length === 0) {
+      if (!selectedZone || uploadedImages.length === 0) {
          alert('Please complete all required fields')
+         return
+      }
+
+      // Verificar si necesita talla
+      const hasSizes = categoryItem?.ProductSize && categoryItem.ProductSize.length > 0
+      if (hasSizes && !selectedSize) {
+         alert('Please select a size')
+         return
+      }
+
+      // Verificar stock
+      if (!stockInfo?.available) {
+         alert('Product not available')
+         return
+      }
+
+      if (!stockInfo.unlimited && quantity > stockInfo.stock) {
+         alert(`Only ${stockInfo.stock} units available`)
          return
       }
 
@@ -109,7 +178,8 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
             body: JSON.stringify({
                productId: product.id,
                zoneId: selectedZone,
-               sizeId: selectedSize,
+               sizeId: selectedSize || null,
+               quantity,
                designImages: uploadedImages,
                notes,
             }),
@@ -122,7 +192,11 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
             setUploadedImages([])
             setSelectedZone('')
             setSelectedSize('')
+            setQuantity(1)
             setNotes('')
+         } else {
+            const error = await res.json()
+            alert(error.error || 'Error sending request')
          }
       } catch (error) {
          console.error('Error submitting customization:', error)
@@ -170,7 +244,7 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
                         <SelectValue placeholder="Select where to print" />
                      </SelectTrigger>
                      <SelectContent>
-                        {categoryItem?.zones.map((zone) => (
+                        {categoryItem?.ProductZone.map((zone) => (
                            <SelectItem key={zone.id} value={zone.id}>
                               {zone.name}
                            </SelectItem>
@@ -187,13 +261,46 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
                         <SelectValue placeholder="Select size" />
                      </SelectTrigger>
                      <SelectContent>
-                        {categoryItem?.sizes.map((size) => (
+                        {categoryItem?.ProductSize.map((size) => (
                            <SelectItem key={size.id} value={size.id}>
                               {size.name} {size.code && `(${size.code})`}
                            </SelectItem>
                         ))}
                      </SelectContent>
                   </Select>
+               </div>
+
+               {/* Quantity Selection */}
+               <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                     id="quantity"
+                     type="number"
+                     min="1"
+                     max={stockInfo?.unlimited ? 999 : stockInfo?.stock || 1}
+                     value={quantity}
+                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                     disabled={!stockInfo?.available || checkingStock}
+                  />
+                  {checkingStock && (
+                     <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Checking stock...
+                     </p>
+                  )}
+                  {stockInfo && !checkingStock && (
+                     <p className={`text-xs flex items-center gap-1 ${
+                        stockInfo.available ? 'text-green-600' : 'text-red-600'
+                     }`}>
+                        <Package className="h-3 w-3" />
+                        {stockInfo.unlimited 
+                           ? 'Unlimited stock (Print on Demand)'
+                           : stockInfo.available
+                              ? `${stockInfo.stock} units available`
+                              : 'Out of stock'
+                        }
+                     </p>
+                  )}
                </div>
 
                {/* Design Upload */}
@@ -281,7 +388,13 @@ export const CustomizeModal = ({ product, open, onClose }: CustomizeModalProps) 
                   <Button
                      onClick={handleSubmit}
                      className="flex-1"
-                     disabled={loading || !selectedZone || !selectedSize || uploadedImages.length === 0}
+                     disabled={
+                        loading || 
+                        !selectedZone || 
+                        uploadedImages.length === 0 ||
+                        !stockInfo?.available ||
+                        checkingStock
+                     }
                   >
                      {loading ? (
                         <>

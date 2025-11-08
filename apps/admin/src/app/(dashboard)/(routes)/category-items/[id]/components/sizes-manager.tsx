@@ -21,7 +21,7 @@ export const SizesManager: React.FC<SizesManagerProps> = ({
       const currentSizes = form.getValues('sizes') || []
       form.setValue('sizes', [
          ...currentSizes,
-         { name: '', code: '', displayOrder: currentSizes.length },
+         { name: '', code: '', displayOrder: currentSizes.length, stock: 0 },
       ])
    }
 
@@ -67,7 +67,7 @@ export const SizesManager: React.FC<SizesManagerProps> = ({
                      key={index}
                      className="flex items-end gap-4 p-4 border rounded-lg"
                   >
-                     <div className="flex-1 grid grid-cols-3 gap-4">
+                     <div className="flex-1 grid grid-cols-4 gap-4">
                         <div>
                            <label className="text-sm font-medium">Name</label>
                            <Input
@@ -87,6 +87,26 @@ export const SizesManager: React.FC<SizesManagerProps> = ({
                               value={size.code || ''}
                               onChange={(e) =>
                                  updateSize(index, 'code', e.target.value)
+                              }
+                           />
+                        </div>
+                        <div>
+                           <label className="text-sm font-medium">
+                              Stock
+                              <HelpTooltip content="Available quantity for this size" />
+                           </label>
+                           <Input
+                              type="number"
+                              min="0"
+                              disabled={loading}
+                              placeholder="0"
+                              value={size.stock ?? 0}
+                              onChange={(e) =>
+                                 updateSize(
+                                    index,
+                                    'stock',
+                                    parseInt(e.target.value) || 0
+                                 )
                               }
                            />
                         </div>

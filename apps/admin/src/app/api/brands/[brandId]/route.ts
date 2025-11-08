@@ -89,9 +89,9 @@ export async function PATCH(
 
       const body = await req.json()
 
-      const { title, description, logo } = body
+      const { title, description, color } = body
 
-      if (!title && !description && !logo) {
+      if (!title && !description && color === undefined) {
          return new NextResponse(
             'At least one field is required',
             { status: 400 }
@@ -108,8 +108,8 @@ export async function PATCH(
          },
          data: {
             ...(title && { title }),
-            ...(description && { description }),
-            ...(logo && { logo }),
+            ...(description !== undefined && { description }),
+            ...(color !== undefined && { color }),
          },
       })
 

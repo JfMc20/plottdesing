@@ -7,7 +7,7 @@ export async function PATCH(
 ) {
    try {
       const body = await req.json()
-      const { isArchived, label, image } = body
+      const { isArchived, label, image, categoryId } = body
 
       // Si solo se está actualizando isArchived, hacer update simple
       if (isArchived !== undefined && Object.keys(body).length === 1) {
@@ -24,6 +24,7 @@ export async function PATCH(
          data: {
             label,
             image,
+            categoryId: categoryId || null,
          },
       })
 
