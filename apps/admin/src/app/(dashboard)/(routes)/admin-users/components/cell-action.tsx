@@ -1,6 +1,9 @@
 'use client'
 
-import { AlertModal } from '@/components/modals/alert-modal'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { MoreHorizontal, Trash } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import {
    DropdownMenu,
@@ -9,11 +12,7 @@ import {
    DropdownMenuLabel,
    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Trash } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { toast } from 'react-hot-toast'
-
+import { AlertModal } from '@/components/modals/alert-modal'
 import { AdminUserColumn } from './client'
 
 interface CellActionProps {
@@ -28,25 +27,17 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
    const onDelete = async () => {
       try {
          setLoading(true)
-
-         const response = await fetch(`/api/admin-users/${data.id}`, {
+         await fetch(`/api/admin-users/${data.id}`, {
             method: 'DELETE',
+            cache: 'no-store',
          })
-
-         const result = await response.json()
-
-         if (!response.ok) {
-            throw new Error(result.error || 'Failed to delete admin user')
-         }
-
-         toast.success('Admin user deleted')
          router.refresh()
-         setOpen(false)
-      } catch (error: any) {
-         console.error('Error deleting admin:', error)
-         toast.error(error.message || 'Failed to delete admin user')
+         toast.success('Admin user deleted.')
+      } catch (error) {
+         toast.error('Something went wrong.')
       } finally {
          setLoading(false)
+         setOpen(false)
       }
    }
 
