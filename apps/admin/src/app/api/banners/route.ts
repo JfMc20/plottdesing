@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import prisma from '@/lib/prisma'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function POST(req: Request) {
    try {
@@ -19,7 +20,6 @@ export async function POST(req: Request) {
 
       return NextResponse.json(banner)
    } catch (error) {
-      console.error('[BANNER_POST]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BANNER_POST')
    }
 }

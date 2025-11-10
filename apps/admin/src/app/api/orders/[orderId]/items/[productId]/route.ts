@@ -1,16 +1,15 @@
 import prisma from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function PATCH(
    req: Request,
    { params }: { params: { orderId: string; productId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
       const { count } = body
@@ -22,7 +21,7 @@ export async function PATCH(
       // Update the order item count
       const orderItem = await prisma.orderItem.update({
          where: {
-            UniqueOrderItem: {
+            orderId_productId: {
                orderId: params.orderId,
                productId: params.productId,
             },
@@ -32,14 +31,13 @@ export async function PATCH(
          },
          include: {
             Product: true,
-            order: true,
+            Order: true,
          },
       })
 
       return NextResponse.json(orderItem)
    } catch (error) {
-      console.error('[ORDER_ITEM_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'ORDER_ITEM_PATCH')
    }
 }
 
@@ -48,16 +46,13 @@ export async function DELETE(
    { params }: { params: { orderId: string; productId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       // Delete the order item
       const orderItem = await prisma.orderItem.delete({
          where: {
-            UniqueOrderItem: {
+            orderId_productId: {
                orderId: params.orderId,
                productId: params.productId,
             },
@@ -66,7 +61,6 @@ export async function DELETE(
 
       return NextResponse.json(orderItem)
    } catch (error) {
-      console.error('[ORDER_ITEM_DELETE]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'ORDER_ITEM_DELETE')
    }
 }

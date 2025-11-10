@@ -1,17 +1,16 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function GET(
    req: Request,
    { params }: { params: { productId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       if (!params.productId) {
          return new NextResponse('Product id is required', { status: 400 })
@@ -25,8 +24,7 @@ export async function GET(
 
       return NextResponse.json(product)
    } catch (error) {
-      console.error('[PRODUCT_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'PRODUCT_GET')
    }
 }
 
@@ -35,11 +33,8 @@ export async function DELETE(
    { params }: { params: { productId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       // Check if product has related orders
       const productWithOrders = await prisma.product.findUnique({
@@ -99,8 +94,7 @@ export async function DELETE(
       revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
-      console.error('[PRODUCT_DELETE]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'PRODUCT_DELETE')
    }
 }
 
@@ -113,11 +107,8 @@ export async function PATCH(
          return new NextResponse('Product Id is required', { status: 400 })
       }
 
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
       const { 
@@ -223,7 +214,6 @@ export async function PATCH(
       revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
-      console.error('[PRODUCT_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'PRODUCT_PATCH')
    }
 }

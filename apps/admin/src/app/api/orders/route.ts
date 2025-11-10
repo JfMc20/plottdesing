@@ -1,15 +1,14 @@
 import prisma from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const { searchParams } = new URL(req.url)
 
@@ -27,7 +26,7 @@ export async function GET(req: Request) {
             ...(isCompleted !== null && isCompleted !== undefined && { isCompleted: isCompleted === 'true' }),
          },
          include: {
-            user: {
+            User: {
                select: {
                   id: true,
                   email: true,
@@ -35,7 +34,7 @@ export async function GET(req: Request) {
                   name: true,
                },
             },
-            address: true,
+            Address: true,
             OrderItem: {
                include: {
                   Product: {
@@ -57,7 +56,6 @@ export async function GET(req: Request) {
 
       return NextResponse.json(orders)
    } catch (error) {
-      console.error('[ORDERS_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'ORDERS_GET')
    }
 }

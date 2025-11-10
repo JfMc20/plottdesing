@@ -11,9 +11,9 @@ export default async function CategoryItemPage({
          ? await prisma.categoryItem.findUnique({
               where: { id: params.id },
               include: {
-                 sizes: { orderBy: { displayOrder: 'asc' } },
-                 zones: {
-                    include: { printSizes: true },
+                 ProductSize: { orderBy: { displayOrder: 'asc' } },
+                 ProductZone: {
+                    include: { ProductPrintSize: true },
                     orderBy: { displayOrder: 'asc' },
                  },
                  ProductAttribute: true,
@@ -25,9 +25,9 @@ export default async function CategoryItemPage({
       ? {
            ...categoryItem,
            basePrice: Number(categoryItem.basePrice),
-           zones: categoryItem.zones.map((zone) => ({
+           zones: categoryItem.ProductZone.map((zone) => ({
               ...zone,
-              printSizes: zone.printSizes.map((ps) => ({
+              printSizes: zone.ProductPrintSize.map((ps) => ({
                  ...ps,
                  width: Number(ps.width),
                  height: Number(ps.height),

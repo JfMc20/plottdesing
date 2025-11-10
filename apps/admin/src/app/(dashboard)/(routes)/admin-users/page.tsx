@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Heading } from '@/components/ui/heading'
 import { Separator } from '@/components/ui/separator'
-import { createAdminClient } from '@/lib/auth-shared/supabase/admin'
+import { createAdminClient } from '@persepolis/auth/supabase/admin'
 import { Plus } from 'lucide-react'
 
 import { AdminUsersClient, AdminUserColumn } from './components/client'

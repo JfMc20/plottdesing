@@ -127,10 +127,10 @@ export const OrderItemsList: React.FC<OrderItemsListProps> = ({ order }) => {
                {orderItems.map((item) => (
                   <TableRow key={item.productId}>
                      <TableCell>
-                        {item.product?.images?.[0] ? (
+                        {item.Product?.images?.[0] ? (
                            <Image
-                              src={item.product.images[0]}
-                              alt={item.product.title || 'Product'}
+                              src={item.Product.images[0]}
+                              alt={item.Product.title || 'Product'}
                               width={60}
                               height={60}
                               className="rounded-md object-cover"
@@ -143,7 +143,7 @@ export const OrderItemsList: React.FC<OrderItemsListProps> = ({ order }) => {
                      </TableCell>
                      <TableCell>
                         <div>
-                           <p className="font-medium">{item.product?.title || 'Unknown Product'}</p>
+                           <p className="font-medium">{item.Product?.title || 'Unknown Product'}</p>
                            <p className="text-xs text-muted-foreground">
                               ID: {item.productId}
                            </p>

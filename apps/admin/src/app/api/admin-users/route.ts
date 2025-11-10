@@ -1,5 +1,6 @@
-import { createAdminClient } from '@/lib/auth-shared/supabase/admin'
+import { createAdminClient } from '@persepolis/auth/supabase/admin'
 import { NextResponse } from 'next/server'
+import { handleApiError } from '@/lib/api/error-handler'
 
 /**
  * GET /api/admin-users

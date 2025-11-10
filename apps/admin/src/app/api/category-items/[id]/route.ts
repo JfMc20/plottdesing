@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function GET(
    req: Request,
@@ -10,9 +12,9 @@ export async function GET(
          where: { id: params.id },
          include: {
             Category: true,
-            sizes: { orderBy: { displayOrder: 'asc' } },
-            zones: {
-               include: { printSizes: true },
+            ProductSize: { orderBy: { displayOrder: 'asc' } },
+            ProductZone: {
+               include: { ProductPrintSize: true },
                orderBy: { displayOrder: 'asc' },
             },
             ProductAttribute: true,
@@ -25,8 +27,7 @@ export async function GET(
 
       return NextResponse.json(categoryItem)
    } catch (error) {
-      console.error('[CATEGORY_ITEM_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_ITEM_GET')
    }
 }
 
@@ -35,11 +36,8 @@ export async function PATCH(
    { params }: { params: { id: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
       const {
@@ -114,21 +112,20 @@ export async function PATCH(
             description,
             skuPattern,
             basePrice,
-            sizes: cleanSizes ? { create: cleanSizes } : undefined,
-            zones: cleanZones ? { create: cleanZones } : undefined,
-            attributes: cleanAttributes ? { create: cleanAttributes } : undefined,
+            ProductSize: cleanSizes ? { create: cleanSizes } : undefined,
+            ProductZone: cleanZones ? { create: cleanZones } : undefined,
+            ProductAttribute: cleanAttributes ? { create: cleanAttributes } : undefined,
          },
          include: {
             ProductSize: true,
-            zones: { include: { printSizes: true } },
+            ProductZone: { include: { ProductPrintSize: true } },
             ProductAttribute: true,
          },
       })
 
       return NextResponse.json(categoryItem)
    } catch (error) {
-      console.error('[CATEGORY_ITEM_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_ITEM_PATCH')
    }
 }
 
@@ -137,11 +134,8 @@ export async function DELETE(
    { params }: { params: { id: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       // Delete related records first to avoid foreign key constraint errors
       await prisma.$transaction([
@@ -173,7 +167,6 @@ export async function DELETE(
 
       return NextResponse.json({ success: true })
    } catch (error) {
-      console.error('[CATEGORY_ITEM_DELETE]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_ITEM_DELETE')
    }
 }

@@ -8,7 +8,7 @@ import { UserColumn } from './components/table'
 export default async function UsersPage() {
    const users = await prisma.user.findMany({
       include: {
-         orders: true,
+         Order: true,
       },
       take: 10,
       orderBy: {
@@ -21,7 +21,7 @@ export default async function UsersPage() {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      orders: user.orders.length,
+      orders: user.Order.length,
    }))
 
    return (

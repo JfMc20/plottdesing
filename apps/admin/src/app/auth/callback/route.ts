@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import prisma from '@/lib/prisma'
+import { nanoid } from 'nanoid'
 
 /**
  * Auth callback route handler
@@ -63,10 +64,12 @@ export async function GET(request: NextRequest) {
           // Create Owner record for admin user
           await prisma.owner.create({
             data: {
+              id: nanoid(),
               supabaseId: data.user.id,
               email: data.user.email,
               name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email,
               avatar: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture,
+              updatedAt: new Date(),
             },
           })
           console.log('✅ Owner record created for admin:', data.user.email)

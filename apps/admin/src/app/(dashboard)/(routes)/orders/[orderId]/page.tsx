@@ -25,22 +25,22 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
          id: params.orderId,
       },
       include: {
-         address: true,
-         discountCode: true,
-         user: {
+         Address: true,
+         DiscountCode: true,
+         User: {
             include: {
-               addresses: true,
-               payments: true,
-               orders: true,
+               Address: true,
+               Payment: true,
+               Order: true,
             },
          },
-         payments: {
+         Payment: {
             include: {
-               provider: true,
+               PaymentProvider: true,
             },
          },
          OrderItem: { include: { Product: true } },
-         refund: true,
+         Refund: true,
       },
    })
 
@@ -65,19 +65,19 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                            <div className="grid w-full items-center">
                               <h3>Name</h3>
                               <p className="text-muted-foreground">
-                                 {order?.user?.name}
+                                 {order?.User?.name}
                               </p>
                            </div>
                            <div className="grid w-full items-center">
                               <h3>Email</h3>
                               <p className="text-muted-foreground">
-                                 {order?.user?.email}
+                                 {order?.User?.email}
                               </p>
                            </div>
                            <div className="grid w-full items-center">
                               <h3>Phone</h3>
                               <p className="text-muted-foreground">
-                                 {order?.user?.phone}
+                                 {order?.User?.phone}
                               </p>
                            </div>
                         </div>
@@ -87,7 +87,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
             </CardContent>
             <CardFooter>
                <Link
-                  href={`/users/${order?.user?.id}`}
+                  href={`/users/${order?.User?.id}`}
                   className="text-sm underline text-muted-foreground transition-colors hover:text-primary"
                >
                   Visit this user's profile.
@@ -116,7 +116,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                         </div>
                      </AccordionTrigger>
                      <AccordionContent>
-                        <OrderItemsList order={order} />
+                        <OrderItemsList order={order as any} />
                      </AccordionContent>
                   </AccordionItem>
                </Accordion>
@@ -142,7 +142,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
                         </div>
                      </AccordionTrigger>
                      <AccordionContent>
-                        <OrderForm initialData={order} />
+                        <OrderForm initialData={order as any} />
                      </AccordionContent>
                   </AccordionItem>
                </Accordion>
@@ -162,7 +162,7 @@ const ProductPage = async ({ params }: { params: { orderId: string } }) => {
             </div>
             <UserCard />
             <OrderItemsCard />
-            {order && <RefundSection order={order} />}
+            {order && <RefundSection order={order as any} />}
             <EditOrderCard />
          </div>
       </div>

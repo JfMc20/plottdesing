@@ -1,17 +1,17 @@
 import prisma from '@/lib/prisma'
 import { createRefundNotification } from '@/lib/notifications'
 import { NextResponse } from 'next/server'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
+import { nanoid } from 'nanoid'
 
 export async function POST(
    req: Request,
    { params }: { params: { orderId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
       const { amount, reason } = body
@@ -27,7 +27,7 @@ export async function POST(
       // Check if order exists
       const order = await prisma.order.findUnique({
          where: { id: params.orderId },
-         include: { refund: true },
+         include: { Refund: true },
       })
 
       if (!order) {
@@ -35,7 +35,7 @@ export async function POST(
       }
 
       // Check if refund already exists
-      if (order.refund) {
+      if (order.Refund) {
          return new NextResponse('Refund already exists for this order', { status: 400 })
       }
 
@@ -52,9 +52,11 @@ export async function POST(
          // Create refund
          prisma.refund.create({
             data: {
+               id: nanoid(),
                amount,
                reason,
                orderId: params.orderId,
+               updatedAt: new Date(),
             },
          }),
          // Update order status to RefundProcessing
@@ -76,7 +78,6 @@ export async function POST(
          order: updatedOrder,
       })
    } catch (error) {
-      console.error('[REFUND_POST]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'REFUND_POST')
    }
 }

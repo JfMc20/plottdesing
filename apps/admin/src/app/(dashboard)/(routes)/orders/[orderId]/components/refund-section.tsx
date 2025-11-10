@@ -20,7 +20,7 @@ interface RefundSectionProps {
 export const RefundSection: React.FC<RefundSectionProps> = ({ order }) => {
    const [isModalOpen, setIsModalOpen] = useState(false)
 
-   const hasRefund = !!order.refund
+   const hasRefund = !!order.Refund
    const canRefund = !hasRefund && order.isPaid
 
    return (
@@ -50,7 +50,7 @@ export const RefundSection: React.FC<RefundSectionProps> = ({ order }) => {
                                        Refund Amount
                                     </h3>
                                     <p className="text-2xl font-bold">
-                                       ${order.refund.amount.toFixed(2)}
+                                       ${(order.Refund as any)?.amount?.toFixed(2) || '0.00'}
                                     </p>
                                  </div>
                                  <div>
@@ -58,7 +58,7 @@ export const RefundSection: React.FC<RefundSectionProps> = ({ order }) => {
                                        Refund Date
                                     </h3>
                                     <p className="text-sm">
-                                       {new Date(order.refund.createdAt).toLocaleDateString()}
+                                       {order.Refund && new Date((order.Refund as any).createdAt).toLocaleDateString()}
                                     </p>
                                  </div>
                               </div>
@@ -67,13 +67,13 @@ export const RefundSection: React.FC<RefundSectionProps> = ({ order }) => {
                                     Refund Reason
                                  </h3>
                                  <p className="text-sm bg-muted p-4 rounded-md">
-                                    {order.refund.reason}
+                                    {(order.Refund as any)?.reason}
                                  </p>
                               </div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                  <DollarSign className="h-4 w-4" />
                                  <span>
-                                    Refund ID: {order.refund.id}
+                                    Refund ID: {(order.Refund as any)?.id}
                                  </span>
                               </div>
                            </div>

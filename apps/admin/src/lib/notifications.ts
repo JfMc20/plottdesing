@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import { OrderStatusEnum } from '@prisma/client'
+import { nanoid } from 'nanoid'
 
 interface CreateOrderNotificationParams {
    userId: string
@@ -53,9 +54,11 @@ export async function createOrderNotification(
 
       await prisma.notification.create({
          data: {
+            id: nanoid(),
             userId,
             content: message,
             isRead: false,
+            updatedAt: new Date(),
          },
       })
 
@@ -81,9 +84,11 @@ export async function createRefundNotification(
 
       await prisma.notification.create({
          data: {
+            id: nanoid(),
             userId,
             content: message,
             isRead: false,
+            updatedAt: new Date(),
          },
       })
 
@@ -108,9 +113,11 @@ export async function createPaymentNotification(
 
       await prisma.notification.create({
          data: {
+            id: nanoid(),
             userId,
             content: message,
             isRead: false,
+            updatedAt: new Date(),
          },
       })
 

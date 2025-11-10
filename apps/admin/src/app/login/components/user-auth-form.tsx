@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@persepolis/auth'
 import { cn } from '@/lib/utils'
 import { isEmailValid } from '@persepolis/regex'
 import { Loader } from 'lucide-react'

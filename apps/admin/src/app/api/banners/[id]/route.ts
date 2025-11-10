@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function PATCH(
    req: Request,
@@ -30,8 +31,7 @@ export async function PATCH(
 
       return NextResponse.json(banner)
    } catch (error) {
-      console.error('[BANNER_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BANNER_PATCH')
    }
 }
 

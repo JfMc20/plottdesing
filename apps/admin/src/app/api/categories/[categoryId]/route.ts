@@ -1,4 +1,6 @@
 import prisma from '@/lib/prisma'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -6,11 +8,8 @@ export async function GET(
    { params }: { params: { categoryId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       if (!params.categoryId) {
          return new NextResponse('Category id is required', { status: 400 })
@@ -24,8 +23,7 @@ export async function GET(
 
       return NextResponse.json(category)
    } catch (error) {
-      console.error('[CATEGORY_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_GET')
    }
 }
 
@@ -34,17 +32,13 @@ export async function DELETE(
    { params }: { params: { categoryId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       if (!params.categoryId) {
          return new NextResponse('Category id is required', { status: 400 })
       }
 
-      // Check if category has CategoryItems
       const categoryItemsCount = await prisma.categoryItem.count({
          where: {
             categoryId: params.categoryId,
@@ -66,8 +60,7 @@ export async function DELETE(
 
       return NextResponse.json(category)
    } catch (error) {
-      console.error('[CATEGORY_DELETE]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_DELETE')
    }
 }
 
@@ -76,14 +69,10 @@ export async function PATCH(
    { params }: { params: { categoryId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
-
       const { title, description, bannerId, isArchived } = body
 
       if (!params.categoryId) {
@@ -113,7 +102,6 @@ export async function PATCH(
 
       return NextResponse.json(updatedCategory)
    } catch (error) {
-      console.error('[CATEGORY_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'CATEGORY_PATCH')
    }
 }

@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
 import { createOrderNotification, createPaymentNotification } from '@/lib/notifications'
+import { handleApiError } from '@/lib/api/error-handler'
 import { OrderStatusEnum } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
@@ -9,18 +11,15 @@ export async function GET(
    { params }: { params: { orderId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const order = await prisma.order.findUnique({
          where: {
             id: params.orderId,
          },
          include: {
-            user: {
+            User: {
                select: {
                   id: true,
                   email: true,
@@ -28,7 +27,7 @@ export async function GET(
                   name: true,
                },
             },
-            address: true,
+            Address: true,
             OrderItem: {
                include: {
                   Product: {
@@ -44,13 +43,13 @@ export async function GET(
                   },
                },
             },
-            payments: {
+            Payment: {
                include: {
-                  provider: true,
+                  PaymentProvider: true,
                },
             },
-            refund: true,
-            discountCode: true,
+            Refund: true,
+            DiscountCode: true,
          },
       })
 
@@ -60,8 +59,7 @@ export async function GET(
 
       return NextResponse.json(order)
    } catch (error) {
-      console.error('[ORDER_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'ORDER_GET')
    }
 }
 
@@ -70,11 +68,8 @@ export async function PATCH(
    { params }: { params: { orderId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
 
@@ -133,7 +128,7 @@ export async function PATCH(
          },
          data: updateData,
          include: {
-            user: {
+            User: {
                select: {
                   id: true,
                   email: true,
@@ -141,7 +136,7 @@ export async function PATCH(
                   name: true,
                },
             },
-            address: true,
+            Address: true,
             OrderItem: {
                include: {
                   Product: {
@@ -157,13 +152,13 @@ export async function PATCH(
                   },
                },
             },
-            payments: {
+            Payment: {
                include: {
-                  provider: true,
+                  PaymentProvider: true,
                },
             },
-            refund: true,
-            discountCode: true,
+            Refund: true,
+            DiscountCode: true,
          },
       })
 
@@ -190,7 +185,6 @@ export async function PATCH(
 
       return NextResponse.json(order)
    } catch (error) {
-      console.error('[ORDER_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'ORDER_PATCH')
    }
 }

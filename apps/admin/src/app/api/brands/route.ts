@@ -1,17 +1,16 @@
 import prisma from '@/lib/prisma'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { nanoid } from 'nanoid'
 
 export async function POST(req: Request) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
-
       const { title, description, color } = body
 
       if (!title) {
@@ -20,6 +19,7 @@ export async function POST(req: Request) {
 
       const brand = await prisma.brand.create({
          data: {
+            id: nanoid(),
             title,
             description,
             color: color || '#3B82F6',
@@ -29,18 +29,15 @@ export async function POST(req: Request) {
       revalidatePath('/brands')
       return NextResponse.json(brand)
    } catch (error) {
-      console.error('[BRANDS_POST]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BRANDS_POST')
    }
 }
 
 export async function GET(req: Request) {
    try {
       const brands = await prisma.brand.findMany({})
-
       return NextResponse.json(brands)
    } catch (error) {
-      console.error('[BRANDS_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BRANDS_GET')
    }
 }

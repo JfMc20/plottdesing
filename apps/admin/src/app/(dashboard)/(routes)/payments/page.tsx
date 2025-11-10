@@ -8,9 +8,9 @@ export default async function PaymentsPage() {
    const payments = await prisma.payment.findMany({
       where: {},
       include: {
-         provider: true,
-         user: true,
-         order: true,
+         PaymentProvider: true,
+         User: true,
+         Order: true,
       },
       orderBy: {
          updatedAt: 'desc',

@@ -256,7 +256,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }
    }
 
-   const hasOrders = initialData?.orders && initialData.orders.length > 0
+   const hasOrders = initialData?.orders && (initialData.orders as any[]).length > 0
 
    return (
       <>

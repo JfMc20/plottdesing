@@ -1,14 +1,14 @@
+import { nanoid } from 'nanoid'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 
 export async function POST(req: Request) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
 
@@ -54,6 +54,7 @@ export async function POST(req: Request) {
 
       const product = await prisma.product.create({
          data: {
+            id: nanoid(),
             title,
             description: description || null,
             images,
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
             brandId,
             isFeatured: isFeatured || false,
             isAvailable: isAvailable || false,
+            updatedAt: new Date(),
             categories: {
                connect: {
                   id: categoryId,
@@ -81,18 +83,14 @@ export async function POST(req: Request) {
       revalidatePath('/products')
       return NextResponse.json(product)
    } catch (error) {
-      console.error('[PRODUCTS_POST]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'PRODUCTS_POST')
    }
 }
 
 export async function GET(req: Request) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const { searchParams } = new URL(req.url)
       const categoryId = searchParams.get('categoryId') || undefined
@@ -106,7 +104,6 @@ export async function GET(req: Request) {
 
       return NextResponse.json(products)
    } catch (error) {
-      console.error('[PRODUCTS_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'PRODUCTS_GET')
    }
 }

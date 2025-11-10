@@ -1,4 +1,4 @@
-import { checkAdminRole, updateSession } from '@/lib/auth-shared/supabase/middleware'
+import { checkAdminRole, updateSession } from '@persepolis/auth/supabase/middleware'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(req: NextRequest) {

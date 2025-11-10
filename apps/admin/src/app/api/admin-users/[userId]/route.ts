@@ -1,6 +1,9 @@
-import { createAdminClient } from '@/lib/auth-shared/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@persepolis/auth/supabase/admin'
+import { createClient } from '@persepolis/auth/supabase/server'
 import { NextResponse } from 'next/server'
+import { handleApiError } from '@/lib/api/error-handler'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * DELETE /api/admin-users/[userId]

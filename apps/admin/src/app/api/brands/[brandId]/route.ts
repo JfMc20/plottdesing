@@ -1,4 +1,6 @@
 import prisma from '@/lib/prisma'
+import { validateAuth, isErrorResponse } from '@/lib/api/auth-helper'
+import { handleApiError } from '@/lib/api/error-handler'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
@@ -7,11 +9,8 @@ export async function GET(
    { params }: { params: { brandId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       if (!params.brandId) {
          return new NextResponse('Brand id is required', { status: 400 })
@@ -25,8 +24,7 @@ export async function GET(
 
       return NextResponse.json(brand)
    } catch (error) {
-      console.error('[BRAND_GET]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BRAND_GET')
    }
 }
 
@@ -35,11 +33,8 @@ export async function DELETE(
    { params }: { params: { brandId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       if (!params.brandId) {
          return new NextResponse('Brand id is required', { status: 400 })
@@ -71,8 +66,7 @@ export async function DELETE(
       revalidatePath('/brands')
       return NextResponse.json(brand)
    } catch (error) {
-      console.error('[BRAND_DELETE]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BRAND_DELETE')
    }
 }
 
@@ -81,11 +75,8 @@ export async function PATCH(
    { params }: { params: { brandId: string } }
 ) {
    try {
-      const userId = req.headers.get('X-USER-ID')
-
-      if (!userId) {
-         return new NextResponse('Unauthorized', { status: 401 })
-      }
+      const auth = validateAuth(req)
+      if (isErrorResponse(auth)) return auth
 
       const body = await req.json()
 
@@ -116,7 +107,6 @@ export async function PATCH(
       revalidatePath('/brands')
       return NextResponse.json(updatedBrand)
    } catch (error) {
-      console.error('[BRAND_PATCH]', error)
-      return new NextResponse('Internal error', { status: 500 })
+      return handleApiError(error, 'BRAND_PATCH')
    }
 }

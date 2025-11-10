@@ -1,5 +1,6 @@
-import { getCurrentUser } from '@/lib/auth-shared/utils/get-user'
+import { getCurrentUser } from '@persepolis/auth/utils/get-user'
 import prisma from '@/lib/prisma'
+import { nanoid } from 'nanoid'
 
 /**
  * Gets the current authenticated owner (admin) from the database
@@ -29,10 +30,12 @@ export async function getCurrentOwner() {
       if (adminEmails.includes(user.email)) {
         const newOwner = await prisma.owner.create({
           data: {
+            id: nanoid(),
             supabaseId: user.id,
             email: user.email,
             name: user.user_metadata?.full_name || user.email,
             avatar: user.user_metadata?.avatar_url,
+            updatedAt: new Date(),
           },
         })
 

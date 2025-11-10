@@ -17,8 +17,7 @@ import { createClient } from '@supabase/supabase-js'
  *
  * @example
  * ```ts
- * // In an API route (apps/admin/src/app/api/admin/users/route.ts)
- * import { createAdminClient } from '@/lib/auth-shared/supabase/admin'
+ * import { createAdminClient } from '@persepolis/auth/supabase/admin'
  *
  * export async function POST(req: Request) {
  *   const supabaseAdmin = createAdminClient()

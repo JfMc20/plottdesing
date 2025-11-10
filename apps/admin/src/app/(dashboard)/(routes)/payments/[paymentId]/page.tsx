@@ -27,8 +27,8 @@ export default async function PaymentPage({
          id: params.paymentId,
       },
       include: {
-         provider: true,
-         user: true,
+         PaymentProvider: true,
+         User: true,
       },
    })
 

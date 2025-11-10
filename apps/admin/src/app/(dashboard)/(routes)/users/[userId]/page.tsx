@@ -19,9 +19,9 @@ const UserPage = async ({ params }: { params: { userId: string } }) => {
          id: params.userId,
       },
       include: {
-         addresses: true,
-         payments: true,
-         orders: {
+         Address: true,
+         Payment: true,
+         Order: {
             include: {
                OrderItem: {
                   include: {
@@ -34,7 +34,7 @@ const UserPage = async ({ params }: { params: { userId: string } }) => {
    })
 
    function OrdersCard() {
-      const orders = user?.orders || []
+      const orders = user?.Order || []
 
       const formattedOrders: OrderColumn[] = orders.map((order) => ({
          id: order.id,
@@ -87,7 +87,7 @@ const UserPage = async ({ params }: { params: { userId: string } }) => {
                         </div>
                      </AccordionTrigger>
                      <AccordionContent>
-                        <UserForm initialData={user} />
+                        <UserForm initialData={user as any} />
                      </AccordionContent>
                   </AccordionItem>
                </Accordion>
